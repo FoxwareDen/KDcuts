@@ -7,13 +7,12 @@ export interface MetaData {
 /**
  * Booking object structure
  * 
- * @typedef {Object} Booking
- * @property {number | null} user_id - The unique identifier for the user (can be null)
- * @property {string} email - The email address associated with the booking
- * @property {string} updated_at - ISO 8601 timestamp of when the booking was last updated
- * @property {"pending" | "completed" | "rescheduled" | "cancelled"} status - Current status of the booking
- * @property {number} date - Booking date in YYYYMMDD format (e.g., 20260126 for January 26, 2026)
- * @property {number} time - Booking time in HHMM format (e.g., 1430 for 2:30 PM, 0900 for 9:00 AM)
+ * @property user_id - The unique identifier for the user (can be null)
+ * @property email - The email address associated with the booking
+ * @property updated_at - ISO 8601 timestamp of when the booking was last updated
+ * @property status - Current status of the booking
+ * @property date - Booking date in YYYYMMDD format (e.g., 20260126 for January 26, 2026)
+ * @property time - Booking time in HHMM format (e.g., 1430 for 2:30 PM, 0900 for 9:00 AM)
  * 
  * @example
  * const booking = {
@@ -34,3 +33,14 @@ export interface Booking {
   time: number,
 }
 
+export async function addBooking(booking: Booking): Promise<MetaData | null> {
+  return null
+}
+
+export async function getBookings(): Promise<Booking & MetaData[] | null> {
+  return null
+}
+
+export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<MetaData | null> {
+  return null
+}
