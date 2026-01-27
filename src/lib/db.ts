@@ -1,3 +1,53 @@
+import { createClient } from "@neondatabase/neon-js";
+import { getTimeToPgTime, isoToPgDate } from "./utils";
+
+const client = createClient({
+  auth: {
+    url: import.meta.env.VITE_DATABASE_AUTH_URL
+  },
+  dataApi: {
+    url: import.meta.env.VITE_DATABASE_API_URL
+  }
+})
+
+export async function getUserSession(): Promise<any | null> {
+  try {
+    const { error, data } = await client.auth.getSession();
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error(error as Error);
+    return null;
+  }
+}
+
+export async function signInWithAuth() {
+  try {
+    const { data, error } = await client.auth.signIn.social({
+      provider: "google",
+      callbackURL: window.location.origin,
+    })
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error(error as Error);
+    return null;
+  }
+}
+
+
+export async function signOut() {
+  try {
+    await client.auth.signOut();
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
 
 export interface MetaData {
   id: number,
@@ -13,6 +63,7 @@ export interface MetaData {
  * @property status - Current status of the booking
  * @property date - Booking date in YYYYMMDD format (e.g., 20260126 for January 26, 2026)
  * @property time - Booking time in HHMM format (e.g., 1430 for 2:30 PM, 0900 for 9:00 AM)
+ * @property phone - The phone number associated with the booking
  * 
  * @example
  * const booking = {
@@ -29,12 +80,31 @@ export interface Booking {
   email: string,
   updated_at: string,
   status: "pending" | "completed" | "rescheduled" | "cancelled",
-  date: number,
-  time: number,
+  date: string,
+  time: string,
+  phone: string
 }
 
-export async function addBooking(booking: Booking): Promise<MetaData | null> {
-  return null
+export async function addBooking(booking: { user_id: string | null, email: string, date: string, time: string, phone: string, service: string }): Promise<MetaData | null> {
+  try {
+    const cleanBooking = {
+      user_id: booking.user_id || null,
+      email: booking.email,
+      date: isoToPgDate(booking.date),
+      time: getTimeToPgTime(Number(booking.time)),
+      phone: booking.phone,
+      service: booking.service
+    };
+
+    const { error } = await client.from("bookings").insert(cleanBooking);
+
+    if (error) throw error;
+
+    return null;
+  } catch (error) {
+    console.error(error as Error);
+    return null;
+  }
 }
 
 export async function getBookings(): Promise<Booking & MetaData[] | null> {

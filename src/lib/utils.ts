@@ -145,3 +145,39 @@ export function sortBookingBy(field: "user_id" | "email" | "updated_at" | "statu
       return data
   }
 }
+
+/**
+ * Convert ISO string to PostgreSQL DATE format (YYYY-MM-DD)
+ */
+export function isoToPgDate(isoString: string) {
+  if (!isoString) return null;
+  return isoString.split('T')[0];
+}
+
+/**
+ * Convert ISO string to PostgreSQL TIMESTAMP format (YYYY-MM-DD HH:MM:SS)
+ */
+export function isoToPgTimestamp(isoString: string) {
+  if (!isoString) return null;
+  return new Date(isoString).toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * Convert ISO string to PostgreSQL TIMESTAMPTZ format
+ */
+export function isoToPgTimestamptz(isoString: string) {
+  if (!isoString) return null;
+  return isoString.replace('T', ' ').replace('Z', '');
+}
+
+/*
+ * Convert milliseconds to HH:MM:SS
+ */
+export function getTimeToPgTime(milliseconds: number) {
+  const date = new Date(milliseconds);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
+
