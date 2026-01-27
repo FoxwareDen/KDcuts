@@ -15,7 +15,7 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-foreground">
-                  Marcus & Co.
+                  KD Cuts
                 </h3>
                 <p className="text-xs text-muted-foreground">Est. 2018</p>
               </div>
@@ -89,7 +89,7 @@ export function Footer() {
 
         <div className="mt-12 border-t border-border pt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Marcus & Co. Barbershop. All rights
+            &copy; {new Date().getFullYear()} KD Cuts. Barbershop. All rights
             reserved.
           </p>
         </div>

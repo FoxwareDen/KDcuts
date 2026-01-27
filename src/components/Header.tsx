@@ -12,7 +12,7 @@ export function Header() {
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground">
-              Marcus & Co.
+              KD Cuts
             </h1>
             <p className="text-xs text-muted-foreground">Est. 2018</p>
           </div>
