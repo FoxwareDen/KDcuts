@@ -25,7 +25,7 @@ export async function addBooking(
     start_time: number,
     end_time: number,
     duration: number
-    user_id: number | null
+    user_id: string | null
   },
   bookingDetails: {
     email: string,
@@ -85,12 +85,18 @@ export async function getBookings(): Promise<Booking & { id: number }[] | null> 
     return null
   }
 }
-//
-// export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<MetaData | null> {
-//   try {
-//     return null;
-//   } catch (error) {
-//     console.log(error);
-//     return null;
-//   }
-// }
+
+export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<MetaData | null> {
+  try {
+    const { data: exists, error } = await client.from("bookings").select("*").eq("id", booking_id).single();
+
+    if (error) throw error;
+
+    console.log(error)
+
+    return null;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}

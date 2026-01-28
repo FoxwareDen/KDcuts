@@ -1,4 +1,5 @@
 import { createClient } from "@neondatabase/neon-js";
+import { setAuthSession } from "./auth";
 
 export const client = createClient({
   auth: {
@@ -10,7 +11,35 @@ export const client = createClient({
   }
 })
 
-export async function getUserSession(): Promise<any | null> {
+export type UserSession = {
+  user: {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    email: string;
+    emailVerified: boolean;
+    name: string;
+    image?: string | null | undefined;
+    banned: boolean | null | undefined;
+    role?: string | null | undefined;
+    banReason?: string | null | undefined;
+    banExpires?: Date | null | undefined;
+  };
+  session: {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    expiresAt: Date;
+    token: string;
+    ipAddress?: string | null | undefined;
+    userAgent?: string | null | undefined;
+    impersonatedBy?: string | null | undefined;
+    activeOrganizationId?: string | null | undefined;
+  };
+};
+
+export async function getUserSession(): Promise<UserSession | null> {
   try {
     const { error, data: userSession } = await client.auth.getSession();
 
@@ -32,6 +61,11 @@ export async function signInWithAuth() {
 
     if (error) throw error;
 
+    const userSession = await getUserSession();
+
+    setAuthSession({ user: userSession, isAuthenticated: true });
+
+    return userSession;
   } catch (error) {
     console.error(error as Error);
     return null;
@@ -43,7 +77,7 @@ export async function signOut() {
   try {
     await client.auth.signOut();
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return null;
   }
 }
