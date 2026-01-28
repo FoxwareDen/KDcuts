@@ -3,8 +3,6 @@ import { createRootRoute } from "@tanstack/react-router";
 import "../index.css"; // import normally, no ?url
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/footer";
-import { useEffect } from "react";
-import { getBookings } from "@/lib/booking";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -19,14 +17,6 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-
-  useEffect(() => {
-    (async () => {
-      const bookings = await getBookings();
-
-      console.log(bookings);
-    })()
-  }, [])
 
 
   return (

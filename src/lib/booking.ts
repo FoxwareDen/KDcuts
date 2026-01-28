@@ -1,4 +1,4 @@
-import { client } from "./db.ts";
+import { client, type MetaData } from "./db.ts";
 import { getTimeToPgTime, isoToPgDate } from "./utils";
 
 export interface BookingClientData {
@@ -11,7 +11,7 @@ export interface BookingClientData {
 
 export interface Booking {
   id: number;
-  status: "pending" | "completed" | "rescheduled" | "cancelled",
+  status: "pending" | "completed" | "rescheduled" | "cancelled";
   date: string;
   start_time: string;
   end_time: string;
@@ -86,17 +86,32 @@ export async function getBookings(): Promise<Booking & { id: number }[] | null> 
   }
 }
 
-export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<MetaData | null> {
+export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<any | null> {
   try {
-    const { data: exists, error } = await client.from("bookings").select("*").eq("id", booking_id).single();
+    // 1. First, manually check what endpoint exists
+    console.log('Testing with RLS enabled...');
 
-    if (error) throw error;
+    // 2. Try with very basic update first
+    const { data: resData, error } = await client
+      .from("bookings")
+      .update({ status: "completed" },) // Just one field to test
+      .eq("id", booking_id)
+      .select("*")
+      .single();
 
-    console.log(error)
+    if (error) {
+      console.error('Update error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
 
-    return null;
+    return resData as Booking;
   } catch (error) {
-    console.log(error);
+    console.error('Full error:', error);
     return null;
   }
 }
