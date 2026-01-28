@@ -76,6 +76,10 @@ export async function signInWithAuth() {
 export async function signOut() {
   try {
     await client.auth.signOut();
+    setAuthSession({
+      user: null,
+      isAuthenticated: false
+    });
   } catch (error) {
     console.error(error);
     return null;
