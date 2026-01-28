@@ -1,36 +1,44 @@
-import { addBooking, getUserSession } from "@/lib/db";
+import { BookingConfirmation } from "@/components/booking-confirmation";
+import { BookingSection } from "@/components/booking-section";
+import { HeroSection } from "@/components/hero-section";
+import { ServicesSection } from "@/components/services-section";
+>>>>>>> 30375f5 (added v0 design)
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
+export interface BookingDetails {
+  date: Date;
+  time: string;
+  service: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 function App() {
+  const [confirmedBooking, setConfirmedBooking] =
+    useState<BookingDetails | null>(null);
 
-  const test = async () => {
-    const session = await getUserSession();
+  if (confirmedBooking) {
+    return (
 
-    console.log(session);
+      <BookingConfirmation
+        booking={confirmedBooking}
+        onClose={() => setConfirmedBooking(null)}
+      />
 
-    let user_id = session.user ? session.user.id : null;
-
-    console.log(user_id);
-    console.log((new Date()).toISOString());
-    console.log((new Date()).getTime());
-
-    const test = await addBooking({
-      email: "test",
-      date: (new Date()).toISOString(),
-      time: "1430",
-      phone: "1234567890",
-      user_id,
-      service: "trim service"
-    })
-
-    console.log(test);
+    );
   }
 
-  return <>
-    <button onClick={test}>test</button>
-  </>;
+  return (
+    <>
+      <HeroSection />
+      <ServicesSection />
+      <BookingSection onBookingConfirmed={setConfirmedBooking} />
+    </>
+  );
 }
