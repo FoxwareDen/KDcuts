@@ -1,15 +1,27 @@
 import { addDays, parseISO, format, parse, addMonths, startOfDay, isAfter, isBefore, differenceInDays } from 'date-fns';
 import type { Booking } from './booking';
+import { client } from './db';
 
 export interface Calendar {
-  id: number;
   start_date: string;
   end_date?: string;
   start_time: string;
   end_time: string;
   days_of_week: number[];
-  frequency: "weekly";
+  frequency?: "weekly";
   buffer_minutes?: number; // Buffer between appointments (default: 15)
+}
+
+export async function addCalenderEntries(calendars: Calendar[]) {
+  try {
+    const { error } = await client.from("calendar").insert(calendars);
+
+    if (error) throw error;
+
+    return calendars
+  } catch (error) {
+    return null;
+  }
 }
 
 export interface AvailableSlot {
