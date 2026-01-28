@@ -20,6 +20,18 @@ export async function addCalenderEntries(calendars: Calendar[]) {
 
     return calendars
   } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function getCalenderEntries() {
+  try {
+    const { data } = await client.from("calendar").select("*");
+
+    return data
+  } catch (error) {
+    console.error(error);
     return null;
   }
 }
