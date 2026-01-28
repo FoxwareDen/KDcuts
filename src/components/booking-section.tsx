@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useMemo } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -12,9 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { format, addDays, isSameDay, isWeekend } from "date-fns";
+import { format, addDays } from "date-fns";
 import { CalendarDays, Clock, User, ArrowRight } from "lucide-react";
-import type { BookingDetails } from "@/app/page";
+import type { BookingDetails } from "@/routes";
 
 const services = [
   { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 30 },
@@ -131,22 +129,20 @@ export function BookingSection({ onBookingConfirmed }: BookingSectionProps) {
         {/* Progress Steps */}
         <div className="mb-10 flex items-center justify-center gap-4">
           <div
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${
-              step === 1
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-muted-foreground"
-            }`}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 ${step === 1
+              ? "bg-primary text-primary-foreground"
+              : "bg-secondary text-muted-foreground"
+              }`}
           >
             <CalendarDays className="size-4" />
             <span className="text-sm font-medium">Select Slot</span>
           </div>
           <ArrowRight className="size-4 text-muted-foreground" />
           <div
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${
-              step === 2
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-muted-foreground"
-            }`}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 ${step === 2
+              ? "bg-primary text-primary-foreground"
+              : "bg-secondary text-muted-foreground"
+              }`}
           >
             <User className="size-4" />
             <span className="text-sm font-medium">Your Details</span>
@@ -238,11 +234,10 @@ export function BookingSection({ onBookingConfirmed }: BookingSectionProps) {
                         <Button
                           key={time}
                           variant={selectedTime === time ? "default" : "outline"}
-                          className={`h-10 ${
-                            selectedTime === time
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:border-primary hover:text-primary"
-                          }`}
+                          className={`h-10 ${selectedTime === time
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:border-primary hover:text-primary"
+                            }`}
                           onClick={() => handleTimeSelect(time)}
                         >
                           {time}

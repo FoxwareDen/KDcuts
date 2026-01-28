@@ -16,6 +16,7 @@ export async function getUserSession(): Promise<any | null> {
 
     if (error) throw error;
 
+    return userSession;
   } catch (error) {
     console.error(error as Error);
     return null;
@@ -24,7 +25,7 @@ export async function getUserSession(): Promise<any | null> {
 
 export async function signInWithAuth() {
   try {
-    const { data, error } = await client.auth.signIn.social({
+    const { error } = await client.auth.signIn.social({
       provider: "google",
       callbackURL: window.location.origin,
     })

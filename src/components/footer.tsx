@@ -1,5 +1,3 @@
-"use client";
-
 import { Scissors, MapPin, Phone, Clock, Instagram, Facebook } from "lucide-react";
 
 export function Footer() {

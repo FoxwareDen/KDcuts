@@ -1,5 +1,3 @@
-"use client";
-
 import { Scissors, SprayCan, BadgeCheck } from "lucide-react";
 
 const services = [

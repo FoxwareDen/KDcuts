@@ -1,9 +1,7 @@
-"use client";
-
 import { format } from "date-fns";
 import { CheckCircle, Calendar, Clock, User, Mail, Phone, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { BookingDetails } from "@/app/page";
+import type { BookingDetails } from "@/routes";
 
 interface BookingConfirmationProps {
   booking: BookingDetails;

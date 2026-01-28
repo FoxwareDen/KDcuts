@@ -1,5 +1,5 @@
 import { Calendar, Clock, X, Info, AlertCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   format,
   startOfMonth,
@@ -11,7 +11,6 @@ import {
   addDays,
   isBefore,
   isAfter,
-  parseISO
 } from "date-fns";
 
 // Types matching your backend structure
@@ -38,7 +37,7 @@ export default function TimeSlotSelector({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
+  const [_selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
 
   // Calculate booking window
   const today = new Date();
@@ -120,13 +119,13 @@ export default function TimeSlotSelector({
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Format time display
-  const formatTimeDisplay = (slot: AvailableSlot) => {
-    return `${slot.start_time} - ${slot.end_time}`;
-  };
+  // const _formatTimeDisplay = (slot: AvailableSlot) => {
+  //   return `${slot.start_time} - ${slot.end_time}`;
+  // };
 
   // Get day class based on availability
   const getDayClass = (date: Date) => {
-    const dateKey = formatDateKey(date);
+    // const _dateKey = formatDateKey(date);
     const isSelectable = isDateSelectable(date);
     const isCurrentMonth = isSameMonth(date, currentMonth);
     const isToday = isTodayDate(date);

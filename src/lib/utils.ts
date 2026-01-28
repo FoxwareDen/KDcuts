@@ -13,61 +13,6 @@ const statusValueMap: Record<"pending" | "completed" | "rescheduled" | "cancelle
   "cancelled": 3
 };
 
-
-// function groupByuserId(data: Booking[]): Booking[] {
-//   let buffer: Booking[][] = [];
-//   const map: Record<number, number> = {};
-//   let counter = 0;
-//
-//   for (const item of data) {
-//     if (!item.user_id) {
-//       continue
-//     }
-//     if (!map[item.user_id]) {
-//       map[item.user_id] = counter++;
-//       buffer[counter - 1] = [item];
-//     } else {
-//       buffer[map[item.user_id]].push(item);
-//     }
-//   }
-//
-//   return buffer.flat();
-// }
-//
-// function groupByEmail(data: Booking[]): Booking[] {
-//   let buffer: Booking[][] = [];
-//   const map: Record<string, number> = {};
-//   let counter = 0;
-//
-//   for (const item of data) {
-//     if (!item.email) {
-//       continue
-//     }
-//     if (!map[item.email]) {
-//       map[item.email] = counter++;
-//       buffer[counter - 1] = [item];
-//     } else {
-//       buffer[map[item.email]].push(item);
-//     }
-//   }
-//
-//   return buffer.flat();
-// }
-//
-//
-// function sortByLastUpdated(order: "asc" | "desc", data: Booking[]): Booking[] {
-//   return data.sort((a, b) => {
-//     const dateA = new Date(a.updated_at);
-//     const dateB = new Date(b.updated_at);
-//
-//     if (order === "asc") {
-//       return dateA.getTime() - dateB.getTime();
-//     } else {
-//       return dateB.getTime() - dateA.getTime();
-//     }
-//   });
-// }
-
 function sortByStatus(order: "asc" | "desc", data: Booking[]): Booking[] {
   return data.sort((a, b) => {
     const statusA = statusValueMap[a.status];
@@ -83,13 +28,19 @@ function sortByStatus(order: "asc" | "desc", data: Booking[]): Booking[] {
 
 function sortByDate(order: "asc" | "desc", data: Booking[]): Booking[] {
   return data.sort((a, b) => {
-    // first compare dates
+    // First compare dates (assuming date is numeric or Date type)
     if (a.date !== b.date) {
-      return order === "asc" ? a.date - b.date : b.date - a.date;
+      return order === "asc" ? Number(a.date) - Number(b.date) : Number(b.date) - Number(a.date);
     }
 
-    // if dates are equal, compare times
-    return order === "asc" ? a.time - b.time : b.time - a.time;
+    // If dates are equal, compare times
+    // Convert time strings to comparable numbers (e.g., "14:30" -> 1430)
+    const timeToNumber = (time: string) => parseFloat(time.replace(":", ""));
+
+    const timeA = timeToNumber(a.start_time);
+    const timeB = timeToNumber(b.start_time);
+
+    return order === "asc" ? timeA - timeB : timeB - timeA;
   });
 }
 

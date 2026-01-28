@@ -202,7 +202,7 @@ export function validateBookingTime(
     { ...config, slotDuration: duration }
   );
 
-  const bookingDateTime = parse(desiredTime, 'HH:mm', bookingDate);
+  // const bookingDateTime = parse(desiredTime, 'HH:mm', bookingDate);
   const isAvailable = availableSlots.some(slot => {
     const slotStart = parse(slot.start_time, 'HH:mm', bookingDate);
     return format(slotStart, 'HH:mm') === desiredTime;

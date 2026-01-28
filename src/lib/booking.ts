@@ -1,4 +1,4 @@
-import { type MetaData, client } from "./db.ts";
+import { client } from "./db.ts";
 import { getTimeToPgTime, isoToPgDate } from "./utils";
 
 export interface BookingClientData {
@@ -69,6 +69,7 @@ export async function getBookings(): Promise<Booking & { id: number }[] | null> 
   try {
     const { data } = await client.from("bookings").select("*");
 
+    // @ts-ignore
     const bookings: Booking & { id: number }[] = data.map((row) => ({
       id: row.id,
       status: row.status,
@@ -84,7 +85,12 @@ export async function getBookings(): Promise<Booking & { id: number }[] | null> 
     return null
   }
 }
-
-export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<MetaData | null> {
-  return null
-}
+//
+// export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<MetaData | null> {
+//   try {
+//     return null;
+//   } catch (error) {
+//     console.log(error);
+//     return null;
+//   }
+// }

@@ -1,5 +1,3 @@
-"use client";
-
 import { Star, Clock, Award } from "lucide-react";
 
 export function HeroSection() {
