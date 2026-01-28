@@ -2,7 +2,6 @@ import { BookingConfirmation } from "@/components/booking-confirmation";
 import { BookingSection } from "@/components/booking-section";
 import { HeroSection } from "@/components/hero-section";
 import { ServicesSection } from "@/components/services-section";
->>>>>>> 30375f5 (added v0 design)
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
