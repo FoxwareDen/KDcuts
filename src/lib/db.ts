@@ -1,7 +1,7 @@
 import { createClient } from "@neondatabase/neon-js";
 import { getTimeToPgTime, isoToPgDate } from "./utils";
 
-const client = createClient({
+export const client = createClient({
   auth: {
     url: import.meta.env.VITE_DATABASE_AUTH_URL
   },
@@ -12,11 +12,10 @@ const client = createClient({
 
 export async function getUserSession(): Promise<any | null> {
   try {
-    const { error, data } = await client.auth.getSession();
+    const { error, data: userSession } = await client.auth.getSession();
 
     if (error) throw error;
 
-    return data;
   } catch (error) {
     console.error(error as Error);
     return null;
@@ -32,7 +31,6 @@ export async function signInWithAuth() {
 
     if (error) throw error;
 
-    return data;
   } catch (error) {
     console.error(error as Error);
     return null;
