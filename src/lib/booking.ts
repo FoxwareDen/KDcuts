@@ -2,9 +2,11 @@ import { type MetaData, client } from "./db.ts";
 import { getTimeToPgTime, isoToPgDate } from "./utils";
 
 export interface BookingClientData {
-  booking_id: number | null,
-  email: string,
+  name: string
+  email: string
   phone: string
+  service?: string
+  booking_id: number
 }
 
 export interface Booking {
@@ -12,31 +14,54 @@ export interface Booking {
   status: "pending" | "completed" | "rescheduled" | "cancelled",
   date: string;
   start_time: string;
-  updated_at: string | null,
   end_time: string;
+  updated_at: string | null;
   duration: number;
 }
 
-
-export async function addBooking(booking: { user_id: string | null, email: string, date: string, time: string, phone: string, service: string }): Promise<MetaData | null> {
+export async function addBooking(
+  booking: {
+    date: string,
+    start_time: number,
+    end_time: number,
+    duration: number
+    user_id: number | null
+  },
+  bookingDetails: {
+    email: string,
+    phone: string,
+    service?: string
+    name: string
+  }): Promise<boolean> {
   try {
-    const cleanBooking = {
-      user_id: booking.user_id || null,
-      email: booking.email,
+    const cleanBookingData = {
       date: isoToPgDate(booking.date),
-      time: getTimeToPgTime(Number(booking.time)),
-      phone: booking.phone,
-      service: booking.service
-    };
+      start_time: getTimeToPgTime(Number(booking.start_time)),
+      end_time: getTimeToPgTime(Number(booking.end_time)),
+      duration: booking.duration,
+      user_id: booking.user_id
+    }
 
-    const { error } = await client.from("bookings").insert(cleanBooking);
+    const { data, error } = await client.from("bookings").insert(cleanBookingData).select("*").single();
 
     if (error) throw error;
 
-    return null;
+    const cleanClientData: BookingClientData = {
+      service: bookingDetails.service,
+      email: bookingDetails.email,
+      phone: bookingDetails.phone,
+      name: bookingDetails.name,
+      booking_id: data.id
+    }
+
+    const { error: clientError } = await client.from("booking_data").insert(cleanClientData);
+
+    if (clientError) throw clientError;
+
+    return true
   } catch (error) {
     console.error(error as Error);
-    return null;
+    return false;
   }
 }
 

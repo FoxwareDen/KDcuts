@@ -1,9 +1,9 @@
 import { createClient } from "@neondatabase/neon-js";
-import { getTimeToPgTime, isoToPgDate } from "./utils";
 
 export const client = createClient({
   auth: {
-    url: import.meta.env.VITE_DATABASE_AUTH_URL
+    url: import.meta.env.VITE_DATABASE_AUTH_URL,
+    allowAnonymous: true
   },
   dataApi: {
     url: import.meta.env.VITE_DATABASE_API_URL
