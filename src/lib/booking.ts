@@ -65,11 +65,21 @@ export async function addBooking(
   }
 }
 
-export async function getBookings(): Promise<Booking & MetaData[] | null> {
+export async function getBookings(): Promise<Booking & { id: number }[] | null> {
   try {
     const { data } = await client.from("bookings").select("*");
 
-    return null
+    const bookings: Booking & { id: number }[] = data.map((row) => ({
+      id: row.id,
+      status: row.status,
+      date: row.date,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      updated_at: row.updated_at,
+      duration: row.duration
+    }));
+
+    return bookings;
   } catch (error) {
     return null
   }
