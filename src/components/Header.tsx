@@ -1,6 +1,4 @@
-"use client";
-
-import { Scissors, Phone, MapPin } from "lucide-react";
+import { Scissors, Phone } from "lucide-react";
 
 export function Header() {
   return (

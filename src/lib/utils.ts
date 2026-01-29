@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { Booking } from "./db";
+import type { Booking } from "./booking";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -12,61 +12,6 @@ const statusValueMap: Record<"pending" | "completed" | "rescheduled" | "cancelle
   "completed": 2,
   "cancelled": 3
 };
-
-
-function groupByuserId(data: Booking[]): Booking[] {
-  let buffer: Booking[][] = [];
-  const map: Record<number, number> = {};
-  let counter = 0;
-
-  for (const item of data) {
-    if (!item.user_id) {
-      continue
-    }
-    if (!map[item.user_id]) {
-      map[item.user_id] = counter++;
-      buffer[counter - 1] = [item];
-    } else {
-      buffer[map[item.user_id]].push(item);
-    }
-  }
-
-  return buffer.flat();
-}
-
-function groupByEmail(data: Booking[]): Booking[] {
-  let buffer: Booking[][] = [];
-  const map: Record<string, number> = {};
-  let counter = 0;
-
-  for (const item of data) {
-    if (!item.email) {
-      continue
-    }
-    if (!map[item.email]) {
-      map[item.email] = counter++;
-      buffer[counter - 1] = [item];
-    } else {
-      buffer[map[item.email]].push(item);
-    }
-  }
-
-  return buffer.flat();
-}
-
-
-function sortByLastUpdated(order: "asc" | "desc", data: Booking[]): Booking[] {
-  return data.sort((a, b) => {
-    const dateA = new Date(a.updated_at);
-    const dateB = new Date(b.updated_at);
-
-    if (order === "asc") {
-      return dateA.getTime() - dateB.getTime();
-    } else {
-      return dateB.getTime() - dateA.getTime();
-    }
-  });
-}
 
 function sortByStatus(order: "asc" | "desc", data: Booking[]): Booking[] {
   return data.sort((a, b) => {
@@ -83,13 +28,19 @@ function sortByStatus(order: "asc" | "desc", data: Booking[]): Booking[] {
 
 function sortByDate(order: "asc" | "desc", data: Booking[]): Booking[] {
   return data.sort((a, b) => {
-    // first compare dates
+    // First compare dates (assuming date is numeric or Date type)
     if (a.date !== b.date) {
-      return order === "asc" ? a.date - b.date : b.date - a.date;
+      return order === "asc" ? Number(a.date) - Number(b.date) : Number(b.date) - Number(a.date);
     }
 
-    // if dates are equal, compare times
-    return order === "asc" ? a.time - b.time : b.time - a.time;
+    // If dates are equal, compare times
+    // Convert time strings to comparable numbers (e.g., "14:30" -> 1430)
+    const timeToNumber = (time: string) => parseFloat(time.replace(":", ""));
+
+    const timeA = timeToNumber(a.start_time);
+    const timeB = timeToNumber(b.start_time);
+
+    return order === "asc" ? timeA - timeB : timeB - timeA;
   });
 }
 
@@ -128,15 +79,15 @@ function sortByDate(order: "asc" | "desc", data: Booking[]): Booking[] {
  * // Sort by last updated, most recent first
  * sortBookingBy("updated_at", "desc", bookings);
  */
-export function sortBookingBy(field: "user_id" | "email" | "updated_at" | "status" | "date", order: "asc" | "desc", data: Booking[]) {
+export function sortBookingBy(field: "status" | "date", order: "asc" | "desc", data: Booking[]) {
   switch (field) {
-    case "user_id":
-      console.log("user_id");
-      return groupByuserId(data)
-    case "email":
-      return groupByEmail(data)
-    case "updated_at":
-      return sortByLastUpdated(order, data)
+    // case "user_id":
+    //   console.log("user_id");
+    //   return groupByuserId(data)
+    // case "email":
+    //   return groupByEmail(data)
+    // case "updated_at":
+    //   return sortByLastUpdated(order, data)
     case "status":
       return sortByStatus(order, data);
     case "date":
@@ -145,3 +96,39 @@ export function sortBookingBy(field: "user_id" | "email" | "updated_at" | "statu
       return data
   }
 }
+
+/**
+ * Convert ISO string to PostgreSQL DATE format (YYYY-MM-DD)
+ */
+export function isoToPgDate(isoString: string) {
+  if (!isoString) return null;
+  return isoString.split('T')[0];
+}
+
+/**
+ * Convert ISO string to PostgreSQL TIMESTAMP format (YYYY-MM-DD HH:MM:SS)
+ */
+export function isoToPgTimestamp(isoString: string) {
+  if (!isoString) return null;
+  return new Date(isoString).toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
+ * Convert ISO string to PostgreSQL TIMESTAMPTZ format
+ */
+export function isoToPgTimestamptz(isoString: string) {
+  if (!isoString) return null;
+  return isoString.replace('T', ' ').replace('Z', '');
+}
+
+/*
+ * Convert milliseconds to HH:MM:SS
+ */
+export function getTimeToPgTime(milliseconds: number) {
+  const date = new Date(milliseconds);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
+

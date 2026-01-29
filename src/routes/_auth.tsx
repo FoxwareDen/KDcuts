@@ -1,14 +1,17 @@
-import { getAuthSession } from "../lib/auth";
+import { getAuthSession, intializeAuthSession } from "../lib/auth";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: async ({ location }) => {
-    const { isAuthenticated } = getAuthSession();
+    const { initialized } = getAuthSession();
 
+    if (!initialized) await intializeAuthSession();
+
+    const { isAuthenticated } = getAuthSession();
 
     if (!isAuthenticated) {
       throw redirect({
-        href: "/login",
+        href: "/",
         search: {
           redirect: location.href,
         },

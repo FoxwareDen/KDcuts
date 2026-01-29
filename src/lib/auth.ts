@@ -1,29 +1,17 @@
 import { create } from "zustand";
 import { redirect } from "@tanstack/react-router";
 
+import { getUserSession, type UserSession } from "./db";
+
 export type PermType = "user" | "admin" | "moderator";
 
-export async function login() {
-  // TODO: add your own auth logic
+export async function checkAuthtozition(privilege: string) {
+  const { initialized } = getAuthSession();
 
-  setAuthSession({
-    isAuthenticated: true,
-    user: {
-      privilege: "user"
-    }
-  })
-}
+  if (!initialized) {
+    await intializeAuthSession();
+  }
 
-export async function logout() {
-  // TODO: add your own auth logic
-
-  setAuthSession({
-    isAuthenticated: false,
-    user: null
-  })
-}
-
-export async function checkAuthtozition(privilege: PermType) {
   const { user } = getAuthSession();
 
   if (!user) {
@@ -35,20 +23,17 @@ export async function checkAuthtozition(privilege: PermType) {
     });
   }
 
-  if (privilege != user.privilege) {
+  if (privilege != user.user.role) {
     return redirect({
       href: "/unauthorized",
     });
   }
 }
 
-export interface UserSession {
-  privilege: PermType;
-}
-
 export interface AuthSession {
   user: UserSession | null;
   isAuthenticated: boolean;
+  initialized: boolean;
 }
 
 export interface AuthSessionActions {
@@ -61,6 +46,7 @@ type boop = AuthSession & AuthSessionActions;
 export const useAuthSession = create<boop>()((set) => ({
   user: null,
   isAuthenticated: false,
+  initialized: false,
 
   setSession: (session) =>
     set(() => ({
@@ -81,4 +67,16 @@ export function setAuthSession(data: Partial<AuthSession>) {
 
 export function getAuthSession() {
   return useAuthSession.getState(); // NOT a hook
+}
+
+export async function intializeAuthSession() {
+  const session = await getUserSession()
+
+  if (session) {
+    setAuthSession({ user: session, isAuthenticated: true });
+  }
+
+  setAuthSession({ initialized: true });
+
+  return session;
 }

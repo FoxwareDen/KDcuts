@@ -1,4 +1,4 @@
-import {createRootRoute } from "@tanstack/react-router";
+import { createRootRoute } from "@tanstack/react-router";
 
 import "../index.css"; // import normally, no ?url
 import { Header } from "@/components/Header";
@@ -17,13 +17,15 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+
+
   return (
     <>
-    <main className="min-h-screen bg-background">
-      <Header />
+      <main className="min-h-screen bg-background">
+        <Header />
         {children}
-      <Footer/>
-    </main>
+        <Footer />
+      </main>
     </>
   );
 }
