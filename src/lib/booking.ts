@@ -22,8 +22,8 @@ export interface Booking {
 export async function addBooking(
   booking: {
     date: string,
-    start_time: number,
-    end_time: number,
+    start_time: string,
+    end_time: string,
     duration: number
     user_id: string | null
   },
@@ -36,8 +36,8 @@ export async function addBooking(
   try {
     const cleanBookingData = {
       date: isoToPgDate(booking.date),
-      start_time: getTimeToPgTime(Number(booking.start_time)),
-      end_time: getTimeToPgTime(Number(booking.end_time)),
+      start_time: booking.start_time,
+      end_time: booking.end_time,
       duration: booking.duration,
       user_id: booking.user_id
     }

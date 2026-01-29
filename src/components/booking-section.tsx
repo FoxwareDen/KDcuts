@@ -12,8 +12,9 @@ import {
 import { Clock, ArrowRight, Calendar as Cal, X } from "lucide-react";
 import { generateAvailableSlots, getCalenderEntries, getSlotGenerationConfig, validateBookingTime, type AvailableSlot, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
 import { addDays, addMonths, format, parseISO } from "date-fns";
-import { getBookings, type Booking } from "@/lib/booking";
+import { addBooking, getBookings, type Booking } from "@/lib/booking";
 import TimeSlotSelector from "./TimeSlotSelector";
+import { useAuthSession } from "@/lib/auth";
 
 const services = [
   { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 30 },
@@ -24,6 +25,7 @@ const services = [
 // Simulated barber availability (in real app, this would come from a database/API)
 
 export function BookingSection() {
+  const { user } = useAuthSession();
   // page state
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -106,12 +108,34 @@ export function BookingSection() {
   // TODO: check of time slot selected
   const canSubmit = selectedSlot && selectedServiceData;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (canSubmit && selectedSlot) {
+      setIsLoading(true);
       console.log('Selected slot:', selectedSlot);
       console.log('Selected service:', selectedServiceData);
       console.log('Form data:', formData);
       // TODO: do a push and make the booking
+      try {
+        const res = await addBooking({
+          date: selectedSlot.date,
+          start_time: selectedSlot.start_time + ':00', // Add seconds
+          end_time: selectedSlot.end_time + ':00',     // Add seconds  
+          duration: Number(selectedSlot.duration),
+          user_id: user?.user.id || null
+        }, {
+          email: formData.email,
+          name: formData.name,
+          phone: formData.phone,
+          service: selectedServiceData?.name
+        })
+
+
+      } catch (error) {
+        console.error(error);
+        setError(`Something went wrong: ${error}`);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
   };

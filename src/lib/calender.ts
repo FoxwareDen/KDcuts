@@ -54,9 +54,11 @@ export interface SlotGenerationConfig {
   businessEndHour?: number; // business hours end (0-23)
 }
 
+
+// TODO: Test this
 export async function insertSlotGenerationConfig(config: SlotGenerationConfig) {
   try {
-    const { error } = await client.from("config").insert({
+    const { error } = await client.from("config").upsert({
       id: 1,
       ...config
     });
