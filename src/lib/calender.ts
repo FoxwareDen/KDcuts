@@ -9,7 +9,7 @@ export interface Calendar {
   end_time: string;
   days_of_week: number[];
   frequency?: "weekly";
-  buffer_minutes?: number; // Buffer between appointments (default: 15)
+  buffer_minutes?: number;
 }
 
 export async function addCalenderEntries(calendars: Calendar[]) {
@@ -56,7 +56,7 @@ export interface SlotGenerationConfig {
 
 
 // TODO: Test this
-export async function insertSlotGenerationConfig(config: SlotGenerationConfig) {
+export async function upsertSlotConfig(config: SlotGenerationConfig) {
   try {
     const { error } = await client.from("config").upsert({
       id: 1,
@@ -83,13 +83,15 @@ export async function getSlotGenerationConfig(): Promise<SlotGenerationConfig | 
   }
 }
 
+
+// ================================= helpers ================================= 
 export function generateAvailableSlots(
   calendars: Calendar[],
   bookings: Booking[],
   startDate: string,
   endDate: string,
   config: SlotGenerationConfig = {
-    slotDuration: 30,
+    slotDuration: 40,
     bufferMinutes: 15,
     minAdvanceDays: 2,
     maxAdvanceMonths: 2
