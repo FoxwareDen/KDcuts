@@ -108,7 +108,6 @@ export async function updateBooking(booking_id: number, data: Partial<Booking>):
   }
 }
 
-
 export interface BookingClientData {
   name: string
   email: string
@@ -117,9 +116,22 @@ export interface BookingClientData {
   booking_id: number
 }
 
-export async function getBookingDetailsByID(booking_id: number) {
+export async function getBookingDetailsByID(booking_id: number): Promise<BookingClientData & MetaData | null> {
   try {
     const { data, error } = await client.from("booking_data").select("*").eq("booking_id", booking_id).single();
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function deleteBookingDetailByID(id: number): Promise<any | null> {
+  try {
+    const { data, error } = await client.from("booking_data").delete().eq("id", id).select("*").single();
 
     if (error) throw error;
 
