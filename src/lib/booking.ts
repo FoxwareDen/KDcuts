@@ -1,5 +1,5 @@
 import { client, type MetaData } from "./db.ts";
-import { getTimeToPgTime, isoToPgDate } from "./utils";
+import { isoToPgDate } from "./utils";
 
 export interface Booking {
   id: number;
@@ -86,7 +86,7 @@ export async function updateBooking(booking_id: number, data: Partial<Booking>):
     // 2. Try with very basic update first
     const { data: resData, error } = await client
       .from("bookings")
-      .update({ status: "completed" },) // Just one field to test
+      .update(data) // Just one field to test
       .eq("id", booking_id)
       .select("*")
       .single();
