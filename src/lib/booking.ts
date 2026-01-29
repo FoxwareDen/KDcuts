@@ -1,14 +1,6 @@
 import { client, type MetaData } from "./db.ts";
 import { getTimeToPgTime, isoToPgDate } from "./utils";
 
-export interface BookingClientData {
-  name: string
-  email: string
-  phone: string
-  service?: string
-  booking_id: number
-}
-
 export interface Booking {
   id: number;
   status: "pending" | "completed" | "rescheduled" | "cancelled";
@@ -112,6 +104,28 @@ export async function updateBooking(booking_id: number, data: Partial<Booking>):
     return resData as Booking;
   } catch (error) {
     console.error('Full error:', error);
+    return null;
+  }
+}
+
+
+export interface BookingClientData {
+  name: string
+  email: string
+  phone: string
+  service?: string
+  booking_id: number
+}
+
+export async function getBookingDetailsByID(booking_id: number) {
+  try {
+    const { data, error } = await client.from("booking_data").select("*").eq("booking_id", booking_id).single();
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error(error);
     return null;
   }
 }
