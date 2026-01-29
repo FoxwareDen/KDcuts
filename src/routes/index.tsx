@@ -19,25 +19,11 @@ export interface BookingDetails {
 }
 
 function App() {
-  const [confirmedBooking, setConfirmedBooking] =
-    useState<BookingDetails | null>(null);
-
-  if (confirmedBooking) {
-    return (
-
-      <BookingConfirmation
-        booking={confirmedBooking}
-        onClose={() => setConfirmedBooking(null)}
-      />
-
-    );
-  }
-
   return (
     <>
       <HeroSection />
       <ServicesSection />
-      <BookingSection onBookingConfirmed={setConfirmedBooking} />
+      <BookingSection />
     </>
   );
 }

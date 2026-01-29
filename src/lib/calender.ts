@@ -36,6 +36,8 @@ export async function getCalenderEntries() {
   }
 }
 
+// TODO: ADD DELETE calander
+
 export interface AvailableSlot {
   date: string;
   start_time: string;
@@ -52,6 +54,32 @@ export interface SlotGenerationConfig {
   businessEndHour?: number; // business hours end (0-23)
 }
 
+export async function insertSlotGenerationConfig(config: SlotGenerationConfig) {
+  try {
+    const { error } = await client.from("config").insert({
+      id: 1,
+      ...config
+    });
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+export async function getSlotGenerationConfig(): Promise<SlotGenerationConfig | null> {
+  try {
+    const { data } = await client.from("config").select("*").single();
+
+    return data as SlotGenerationConfig;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 
 export function generateAvailableSlots(
   calendars: Calendar[],
@@ -62,9 +90,7 @@ export function generateAvailableSlots(
     slotDuration: 30,
     bufferMinutes: 15,
     minAdvanceDays: 2,
-    maxAdvanceMonths: 2,
-    businessStartHour: 8,
-    businessEndHour: 18
+    maxAdvanceMonths: 2
   }
 ): AvailableSlot[] {
   const availableSlots: AvailableSlot[] = [];
@@ -117,21 +143,22 @@ export function generateAvailableSlots(
     dayCalendars.forEach(calendar => {
       const bufferMinutes = calendar.buffer_minutes || config.bufferMinutes;
 
-      const calendarStartTime = parse(calendar.start_time, 'HH:mm', currentDate);
-      const calendarEndTime = parse(calendar.end_time, 'HH:mm', currentDate);
+      // Parse start and end times for this specific date
+      const dayStart = startOfDay(currentDate);
+      const effectiveStart = new Date(dayStart);
+      const [startHour, startMinute] = calendar.start_time.split(':').map(Number);
+      effectiveStart.setHours(startHour, startMinute, 0, 0);
 
-      // Apply business hours constraints
-      const dayStartHour = config.businessStartHour !== undefined ? config.businessStartHour : 0;
-      const dayEndHour = config.businessEndHour !== undefined ? config.businessEndHour : 23;
+      const effectiveEnd = new Date(dayStart);
+      const [endHour, endMinute] = calendar.end_time.split(':').map(Number);
+      effectiveEnd.setHours(endHour, endMinute, 0, 0);
 
-      const businessStart = new Date(currentDate);
-      businessStart.setHours(dayStartHour, 0, 0, 0);
-      const businessEnd = new Date(currentDate);
-      businessEnd.setHours(dayEndHour, 0, 0, 0);
-
-      // Get effective start and end times considering business hours
-      const effectiveStart = calendarStartTime > businessStart ? calendarStartTime : businessStart;
-      const effectiveEnd = calendarEndTime < businessEnd ? calendarEndTime : businessEnd;
+      // If end time is earlier than start time, it means it spans to next day
+      // For now, we'll assume end time is always after start time on the same day
+      if (effectiveStart >= effectiveEnd) {
+        console.warn(`Calendar ${calendar.start_date} has invalid time range: ${calendar.start_time} to ${calendar.end_time}`);
+        return;
+      }
 
       let currentSlotStart = effectiveStart;
 
@@ -145,7 +172,7 @@ export function generateAvailableSlots(
         const slotEndWithBuffer = new Date(currentSlotEnd.getTime() + bufferMinutes * 60000);
         if (slotEndWithBuffer > effectiveEnd) {
           // Not enough time for buffer, skip this slot
-          currentSlotStart = currentSlotEnd;
+          currentSlotStart = new Date(currentSlotStart.getTime() + config.slotDuration * 60000);
           continue;
         }
 
@@ -154,7 +181,10 @@ export function generateAvailableSlots(
 
         // Check if this slot conflicts with any booking (including buffer)
         const isSlotBooked = dayBookings.some(booking => {
-          const bookingStart = parse(booking.start_time, 'HH:mm', currentDate);
+          const bookingStart = new Date(dayStart);
+          const [bookingStartHour, bookingStartMinute] = booking.start_time.split(':').map(Number);
+          bookingStart.setHours(bookingStartHour, bookingStartMinute, 0, 0);
+
           const bookingEnd = new Date(bookingStart.getTime() + booking.duration * 60000);
 
           // Add buffer around the booking

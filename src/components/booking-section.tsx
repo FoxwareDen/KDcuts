@@ -1,5 +1,4 @@
-import { useState, useMemo } from "react";
-import { Calendar } from "@/components/ui/calendar";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { format, addDays } from "date-fns";
-import { CalendarDays, Clock, User, ArrowRight } from "lucide-react";
-import type { BookingDetails } from "@/routes";
+import { Clock, ArrowRight, Calendar as Cal, X } from "lucide-react";
+import { generateAvailableSlots, getCalenderEntries, getSlotGenerationConfig, validateBookingTime, type AvailableSlot, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
+import { addDays, addMonths, format, parseISO } from "date-fns";
+import { getBookings, type Booking } from "@/lib/booking";
+import TimeSlotSelector from "./TimeSlotSelector";
 
 const services = [
   { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 30 },
@@ -21,91 +22,100 @@ const services = [
 ];
 
 // Simulated barber availability (in real app, this would come from a database/API)
-const generateAvailableSlots = (date: Date): string[] => {
-  // Closed on Sundays
-  if (date.getDay() === 0) return [];
 
-  // Different hours on Saturday
-  if (date.getDay() === 6) {
-    return ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM"];
-  }
+export function BookingSection() {
+  // page state
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // 
+  const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
 
-  // Regular weekday hours
-  const baseSlots = [
-    "9:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "1:00 PM",
-    "2:00 PM",
-    "3:00 PM",
-    "4:00 PM",
-    "5:00 PM",
-    "6:00 PM",
-  ];
-
-  // Simulate some slots being taken (random for demo)
-  const seed = date.getDate() + date.getMonth();
-  return baseSlots.filter((_, index) => (index + seed) % 3 !== 0);
-};
-
-interface BookingSectionProps {
-  onBookingConfirmed: (booking: BookingDetails) => void;
-}
-
-export function BookingSection({ onBookingConfirmed }: BookingSectionProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
   });
 
-  const availableSlots = useMemo(() => {
-    if (!selectedDate) return [];
-    return generateAvailableSlots(selectedDate);
-  }, [selectedDate]);
-
   const selectedServiceData = services.find((s) => s.id === selectedService);
 
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-    setSelectedTime(""); // Reset time when date changes
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        setIsLoading(true);
 
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-  };
+        const calendars = await getCalenderEntries();
 
-  const canProceedToStep2 =
-    selectedDate && selectedTime && selectedService;
-  const canSubmit =
-    canProceedToStep2 &&
-    formData.name &&
-    formData.email &&
-    formData.phone;
+        if (!calendars) throw new Error("Failed to fetch calender entries");
+
+        const bookings = await getBookings() as Booking[] | null;
+        //
+        if (!bookings) throw new Error("Failed to fetch bookings");
+
+        const slotGenerationConfig = await getSlotGenerationConfig();
+
+        if (!slotGenerationConfig) throw new Error("Failed to fetch slot generation config");
+
+
+        const today = new Date();
+        const startDate = format(addDays(today, Number(slotGenerationConfig.minAdvanceDays || 2)), 'yyyy-MM-dd');
+        const endDate = format(addMonths(today, Number(slotGenerationConfig.maxAdvanceMonths || 1)), 'yyyy-MM-dd');
+
+        // Generate available slots with constraints
+        const config: SlotGenerationConfig = {
+          slotDuration: slotGenerationConfig.slotDuration || 40,
+          bufferMinutes: slotGenerationConfig.bufferMinutes || 15, // 15-minute buffer
+          minAdvanceDays: slotGenerationConfig.minAdvanceDays || 2, // Book at least 2 days in advance
+          maxAdvanceMonths: slotGenerationConfig.maxAdvanceMonths || 2, // Book up to 2 months in advance
+          businessStartHour: slotGenerationConfig.businessStartHour || 8,
+          businessEndHour: slotGenerationConfig.businessEndHour || 18
+        };
+
+        const availableSlots = generateAvailableSlots(
+          calendars,
+          bookings,
+          startDate,
+          endDate,
+          config
+        );
+
+        // Validate a specific booking
+        const validation = validateBookingTime(
+          "2026-01-15",
+          "11:15",
+          40,
+          calendars,
+          bookings,
+          config
+        );
+
+        console.log(availableSlots);
+
+        setAvailableSlots(availableSlots);
+      } catch (error) {
+        console.error(error);
+        setError(`Something went wrong: ${error}`);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    )()
+  }, [])
+
+  // TODO: check of time slot selected
+  const canSubmit = selectedSlot && selectedServiceData;
 
   const handleSubmit = () => {
-    if (canSubmit && selectedDate) {
-      onBookingConfirmed({
-        date: selectedDate,
-        time: selectedTime,
-        service: selectedServiceData?.name || "",
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-      });
+    if (canSubmit && selectedSlot) {
+      console.log('Selected slot:', selectedSlot);
+      console.log('Selected service:', selectedServiceData);
+      console.log('Form data:', formData);
+      // TODO: do a push and make the booking
     }
+
   };
 
-  // Disable past dates and Sundays
-  const disabledDays = [
-    { before: new Date() },
-    { dayOfWeek: [0] }, // Sundays
-  ];
 
   return (
     <section
@@ -126,186 +136,48 @@ export function BookingSection({ onBookingConfirmed }: BookingSectionProps) {
           </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="mb-10 flex items-center justify-center gap-4">
-          <div
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${step === 1
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-muted-foreground"
-              }`}
-          >
-            <CalendarDays className="size-4" />
-            <span className="text-sm font-medium">Select Slot</span>
-          </div>
-          <ArrowRight className="size-4 text-muted-foreground" />
-          <div
-            className={`flex items-center gap-2 rounded-full px-4 py-2 ${step === 2
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-muted-foreground"
-              }`}
-          >
-            <User className="size-4" />
-            <span className="text-sm font-medium">Your Details</span>
-          </div>
-        </div>
 
         <div className="mx-auto max-w-4xl">
-          {step === 1 && (
-            <div className="grid gap-8 lg:grid-cols-2">
-              {/* Calendar */}
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Calendar */}
+            <div className="rounded-xl border border-border bg-background p-6">
+              <TimeSlotSelector slots={availableSlots} onSlotSelect={(slot) => setSelectedSlot(slot)} />
+            </div>
+
+            {/* Time Slots & Service Selection */}
+            <div className="flex flex-col gap-6">
+              {/* Service Selection */}
               <div className="rounded-xl border border-border bg-background p-6">
                 <div className="mb-4 flex items-center gap-2">
-                  <CalendarDays className="size-5 text-primary" />
+                  <Clock className="size-5 text-primary" />
                   <h4 className="font-semibold text-foreground">
-                    Choose a Date
+                    Select Service
                   </h4>
                 </div>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={handleDateSelect}
-                  disabled={disabledDays}
-                  fromDate={new Date()}
-                  toDate={addDays(new Date(), 30)}
-                  className="mx-auto w-full"
-                />
-                <p className="mt-4 text-center text-xs text-muted-foreground">
-                  Closed on Sundays
-                </p>
-              </div>
-
-              {/* Time Slots & Service Selection */}
-              <div className="flex flex-col gap-6">
-                {/* Service Selection */}
-                <div className="rounded-xl border border-border bg-background p-6">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Clock className="size-5 text-primary" />
-                    <h4 className="font-semibold text-foreground">
-                      Select Service
-                    </h4>
-                  </div>
-                  <Select
-                    value={selectedService}
-                    onValueChange={setSelectedService}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          <span className="flex items-center justify-between gap-4">
-                            <span>{service.name}</span>
-                            <span className="text-muted-foreground">
-                              ${service.price} • {service.duration}min
-                            </span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Time Slots */}
-                <div className="flex-1 rounded-xl border border-border bg-background p-6">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Clock className="size-5 text-primary" />
-                    <h4 className="font-semibold text-foreground">
-                      Available Times
-                    </h4>
-                    {selectedDate && (
-                      <span className="ml-auto text-sm text-muted-foreground">
-                        {format(selectedDate, "EEEE, MMM d")}
-                      </span>
-                    )}
-                  </div>
-
-                  {!selectedDate ? (
-                    <p className="py-8 text-center text-muted-foreground">
-                      Please select a date first
-                    </p>
-                  ) : availableSlots.length === 0 ? (
-                    <p className="py-8 text-center text-muted-foreground">
-                      No available slots on this day
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {availableSlots.map((time) => (
-                        <Button
-                          key={time}
-                          variant={selectedTime === time ? "default" : "outline"}
-                          className={`h-10 ${selectedTime === time
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:border-primary hover:text-primary"
-                            }`}
-                          onClick={() => handleTimeSelect(time)}
-                        >
-                          {time}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Continue Button */}
-                <Button
-                  className="w-full"
-                  size="lg"
-                  disabled={!canProceedToStep2}
-                  onClick={() => setStep(2)}
+                <Select
+                  value={selectedService}
+                  onValueChange={setSelectedService}
                 >
-                  Continue to Details
-                  <ArrowRight className="ml-2 size-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="grid gap-8 lg:grid-cols-2">
-              {/* Booking Summary */}
-              <div className="rounded-xl border border-border bg-background p-6">
-                <h4 className="mb-6 font-semibold text-foreground">
-                  Booking Summary
-                </h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-border pb-4">
-                    <span className="text-muted-foreground">Service</span>
-                    <span className="font-medium text-foreground">
-                      {selectedServiceData?.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-border pb-4">
-                    <span className="text-muted-foreground">Date</span>
-                    <span className="font-medium text-foreground">
-                      {selectedDate && format(selectedDate, "EEEE, MMMM d, yyyy")}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-border pb-4">
-                    <span className="text-muted-foreground">Time</span>
-                    <span className="font-medium text-foreground">
-                      {selectedTime}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-border pb-4">
-                    <span className="text-muted-foreground">Duration</span>
-                    <span className="font-medium text-foreground">
-                      {selectedServiceData?.duration} minutes
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-lg font-semibold text-foreground">
-                      Total
-                    </span>
-                    <span className="text-2xl font-bold text-primary">
-                      ${selectedServiceData?.price}
-                    </span>
-                  </div>
-                </div>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {services.map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                        <span className="flex items-center justify-between gap-4">
+                          <span>{service.name}</span>
+                          <span className="text-muted-foreground">
+                            ${service.price} • {service.duration}min
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Customer Details Form */}
-              <div className="rounded-xl border border-border bg-background p-6">
+              {/* Time Slots */}
+              <div className="flex-1 rounded-xl border border-border bg-background p-6">
                 <h4 className="mb-6 font-semibold text-foreground">
                   Your Details
                 </h4>
@@ -347,25 +219,51 @@ export function BookingSection({ onBookingConfirmed }: BookingSectionProps) {
                   </div>
                 </div>
 
-                <div className="mt-6 flex gap-4">
-                  <Button
-                    variant="outline"
-                    className="flex-1 bg-transparent"
-                    onClick={() => setStep(1)}
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    disabled={!canSubmit}
-                    onClick={handleSubmit}
-                  >
-                    Confirm Booking
-                  </Button>
-                </div>
+                {selectedSlot && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-blue-900 flex items-center gap-2">
+                          <Cal className="w-4 h-4" />
+                          Appointment Selected
+                        </h4>
+                        <p className="text-sm text-blue-800 mt-1">
+                          {format(parseISO(selectedSlot.date), 'EEEE, MMMM d, yyyy')}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Clock className="w-4 h-4 text-blue-600" />
+                          <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                            {selectedSlot.duration} min
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedSlot(null)}
+                        className="text-gray-500 hover:text-gray-700"
+                        aria-label="Clear selection"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+
               </div>
+
+              {/* Continue Button */}
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={!canSubmit}
+                onClick={handleSubmit}
+              >
+                Confirm Booking
+                <ArrowRight className="ml-2 size-4" />
+              </Button>
             </div>
-          )}
+          </div>
+
         </div>
       </div>
     </section>
