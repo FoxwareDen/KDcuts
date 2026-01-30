@@ -15,12 +15,65 @@ import { addDays, addMonths, format, parseISO } from "date-fns";
 import { addBooking, getBookings, type Booking } from "@/lib/booking";
 import TimeSlotSelector from "./TimeSlotSelector";
 import { useAuthSession } from "@/lib/auth";
+import useFetch from "@/hooks/useFetch";
 
 const services = [
   { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 40 },
   { id: "beard-trim", name: "Beard Trim & Shape", price: 100, duration: 40 },
   { id: "full-service", name: "The Full Experience", price: 100, duration: 40 },
 ];
+
+
+const fetchAndGenerateAvalibleSlots = async () => {
+  const calendars = await getCalenderEntries();
+
+  if (!calendars) throw new Error("Failed to fetch calender entries");
+
+  const bookings = await getBookings() as Booking[] | null;
+  //
+  if (!bookings) throw new Error("Failed to fetch bookings");
+
+  const slotGenerationConfig = await getSlotGenerationConfig();
+
+  if (!slotGenerationConfig) throw new Error("Failed to fetch slot generation config");
+
+
+  const today = new Date();
+  const startDate = format(addDays(today, Number(slotGenerationConfig.minAdvanceDays || 2)), 'yyyy-MM-dd');
+  const endDate = format(addMonths(today, Number(slotGenerationConfig.maxAdvanceMonths || 1)), 'yyyy-MM-dd');
+
+  // Generate available slots with constraints
+  const config: SlotGenerationConfig = {
+    slotDuration: slotGenerationConfig.slotDuration || 40,
+    bufferMinutes: slotGenerationConfig.bufferMinutes || 15, // 15-minute buffer
+    minAdvanceDays: slotGenerationConfig.minAdvanceDays || 2, // Book at least 2 days in advance
+    maxAdvanceMonths: slotGenerationConfig.maxAdvanceMonths || 2, // Book up to 2 months in advance
+    businessStartHour: slotGenerationConfig.businessStartHour || 8,
+    businessEndHour: slotGenerationConfig.businessEndHour || 18
+  };
+
+  const availableSlots = generateAvailableSlots(
+    calendars,
+    bookings,
+    startDate,
+    endDate,
+    config
+  );
+
+  // Validate a specific booking
+  const validation = validateBookingTime(
+    "2026-01-15",
+    "11:15",
+    40,
+    calendars,
+    bookings,
+    config
+  );
+
+  console.log(availableSlots);
+
+  return availableSlots
+};
 
 // Simulated barber availability (in real app, this would come from a database/API)
 
@@ -32,7 +85,7 @@ export function BookingSection() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // 
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
-  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+  const { data: availableSlots, loading: isLoadingSlots, error: slotsError } = useFetch<AvailableSlot[]>(fetchAndGenerateAvalibleSlots);
 
   const [selectedService, setSelectedService] = useState<string>("");
   const [formData, setFormData] = useState({
@@ -42,69 +95,6 @@ export function BookingSection() {
   });
 
   const selectedServiceData = services.find((s) => s.id === selectedService);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setIsLoading(true);
-
-        const calendars = await getCalenderEntries();
-
-        if (!calendars) throw new Error("Failed to fetch calender entries");
-
-        const bookings = await getBookings() as Booking[] | null;
-        //
-        if (!bookings) throw new Error("Failed to fetch bookings");
-
-        const slotGenerationConfig = await getSlotGenerationConfig();
-
-        if (!slotGenerationConfig) throw new Error("Failed to fetch slot generation config");
-
-
-        const today = new Date();
-        const startDate = format(addDays(today, Number(slotGenerationConfig.minAdvanceDays || 2)), 'yyyy-MM-dd');
-        const endDate = format(addMonths(today, Number(slotGenerationConfig.maxAdvanceMonths || 1)), 'yyyy-MM-dd');
-
-        // Generate available slots with constraints
-        const config: SlotGenerationConfig = {
-          slotDuration: slotGenerationConfig.slotDuration || 40,
-          bufferMinutes: slotGenerationConfig.bufferMinutes || 15, // 15-minute buffer
-          minAdvanceDays: slotGenerationConfig.minAdvanceDays || 2, // Book at least 2 days in advance
-          maxAdvanceMonths: slotGenerationConfig.maxAdvanceMonths || 2, // Book up to 2 months in advance
-          businessStartHour: slotGenerationConfig.businessStartHour || 8,
-          businessEndHour: slotGenerationConfig.businessEndHour || 18
-        };
-
-        const availableSlots = generateAvailableSlots(
-          calendars,
-          bookings,
-          startDate,
-          endDate,
-          config
-        );
-
-        // Validate a specific booking
-        const validation = validateBookingTime(
-          "2026-01-15",
-          "11:15",
-          40,
-          calendars,
-          bookings,
-          config
-        );
-
-        console.log(availableSlots);
-
-        setAvailableSlots(availableSlots);
-      } catch (error) {
-        console.error(error);
-        setError(`Something went wrong: ${error}`);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    )()
-  }, [])
 
   // TODO: check of time slot selected
   const canSubmit = selectedSlot && selectedServiceData;
@@ -163,7 +153,7 @@ export function BookingSection() {
           <div className="grid gap-8 lg:grid-cols-2">
             {/* Calendar */}
             <div className="rounded-xl border border-border bg-background p-6">
-              <TimeSlotSelector slots={availableSlots} onSlotSelect={(slot) => setSelectedSlot(slot)} />
+              <TimeSlotSelector slots={availableSlots || []} onSlotSelect={(slot) => setSelectedSlot(slot)} />
             </div>
 
             {/* Time Slots & Service Selection */}
