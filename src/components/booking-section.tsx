@@ -10,16 +10,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Clock, ArrowRight, Calendar as Cal, X } from "lucide-react";
-import { generateAvailableSlots, getCalenderEntries, getSlotGenerationConfig, validateBookingTime, type AvailableSlot, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
+import { generateAvailableSlots, getCalenderEntries, getSlotGenerationConfig, validateBookingTime, type AvailableSlot, type SlotGenerationConfig } from "@/lib/calender";
 import { addDays, addMonths, format, parseISO } from "date-fns";
 import { addBooking, getBookings, type Booking } from "@/lib/booking";
 import TimeSlotSelector from "./TimeSlotSelector";
 import { useAuthSession } from "@/lib/auth";
 
 const services = [
-  { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 30 },
-  { id: "beard-trim", name: "Beard Trim & Shape", price: 100, duration: 20 },
-  { id: "full-service", name: "The Full Experience", price: 100, duration: 45 },
+  { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 40 },
+  { id: "beard-trim", name: "Beard Trim & Shape", price: 100, duration: 40 },
+  { id: "full-service", name: "The Full Experience", price: 100, duration: 40 },
 ];
 
 // Simulated barber availability (in real app, this would come from a database/API)
@@ -27,6 +27,7 @@ const services = [
 export function BookingSection() {
   const { user } = useAuthSession();
   // page state
+  // TODO: tied page state to loading of slots and handle submition  
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // 
@@ -111,11 +112,8 @@ export function BookingSection() {
   const handleSubmit = async () => {
     if (canSubmit && selectedSlot) {
       setIsLoading(true);
-      console.log('Selected slot:', selectedSlot);
-      console.log('Selected service:', selectedServiceData);
-      console.log('Form data:', formData);
-      // TODO: do a push and make the booking
       try {
+        // TODO: add feed back if failed bool red
         const res = await addBooking({
           date: selectedSlot.date,
           start_time: selectedSlot.start_time + ':00', // Add seconds
