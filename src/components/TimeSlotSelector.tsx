@@ -142,7 +142,7 @@ export default function TimeSlotSelector({
       return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-2 border-blue-500 cursor-pointer";
     }
 
-    return "bg-green-500 text-white hover:bg-green-600 hover:scale-105 cursor-pointer shadow-sm";
+    return "bg-green-500 text-white hover:bg-green-600 hover:scale-102 cursor-pointer shadow-sm";
   };
 
   // Get day title based on status
@@ -178,25 +178,25 @@ export default function TimeSlotSelector({
       </div>
 
       {/* Calendar Container */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <div className="bg-white p-6 mb-6">
         {/* Calendar Navigation */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={previousMonth}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium text-gray-700 transition-colors"
+            className="flex items-center cursor-pointer gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium text-gray-700 transition-colors"
             aria-label="Previous month"
           >
-            ← Previous
+            ←
           </button>
-          <h3 className="text-xl font-bold text-gray-800">
+          <h3 className="text-xl font-bold px-4 text-gray-800 text-center">
             {format(currentMonth, 'MMMM yyyy')}
           </h3>
           <button
             onClick={nextMonth}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium text-gray-700 transition-colors"
+            className="flex items-center cursor-pointer gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium text-gray-700 transition-colors"
             aria-label="Next month"
           >
-            Next →
+            →
           </button>
         </div>
 
@@ -227,7 +227,7 @@ export default function TimeSlotSelector({
                 disabled={!isSelectable}
                 title={getDayTitle(date)}
                 className={`
-                  aspect-square rounded-lg font-medium transition-all duration-200
+                  aspect-square rounded-full font-medium transition-all duration-200
                   flex flex-col items-center justify-center relative
                   ${getDayClass(date)}
                   ${!isCurrentMonth ? 'opacity-40' : ''}
