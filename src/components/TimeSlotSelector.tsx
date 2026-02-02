@@ -142,7 +142,7 @@ export default function TimeSlotSelector({
       return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-2 border-blue-500 cursor-pointer";
     }
 
-    return "bg-green-500 text-white hover:bg-green-600 hover:scale-105 cursor-pointer shadow-sm";
+    return "bg-green-500 text-white hover:bg-green-600 hover:scale-102 cursor-pointer shadow-sm";
   };
 
   // Get day title based on status
@@ -177,35 +177,39 @@ export default function TimeSlotSelector({
         </div>
       </div>
 
-      {/* Calendar Container */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+{/* Calendar Container */}
+<div className="bg-white p-6 mb-6">
         {/* Calendar Navigation */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <button
             onClick={previousMonth}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium text-gray-700 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-700 transition-all hover:shadow-sm"
             aria-label="Previous month"
           >
-            ← Previous
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
-          <h3 className="text-xl font-bold text-gray-800">
+          <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">
             {format(currentMonth, 'MMMM yyyy')}
           </h3>
           <button
             onClick={nextMonth}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium text-gray-700 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-700 transition-all hover:shadow-sm"
             aria-label="Next month"
           >
-            Next →
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
 
         {/* Day Names */}
-        <div className="grid grid-cols-7 gap-2 mb-3">
+        <div className="grid grid-cols-7 gap-2 mb-4">
           {dayNames.map((day) => (
             <div
               key={day}
-              className="text-center font-semibold text-gray-600 text-sm py-2"
+              className="text-center font-semibold text-gray-500 text-xs uppercase tracking-wider py-3"
             >
               {day}
             </div>
@@ -227,29 +231,28 @@ export default function TimeSlotSelector({
                 disabled={!isSelectable}
                 title={getDayTitle(date)}
                 className={`
-                  aspect-square rounded-lg font-medium transition-all duration-200
+                  aspect-square rounded-xl font-medium transition-all duration-200
                   flex flex-col items-center justify-center relative
+                  hover:scale-105 active:scale-95
                   ${getDayClass(date)}
-                  ${!isCurrentMonth ? 'opacity-40' : ''}
+                  ${!isCurrentMonth ? 'opacity-30' : ''}
                 `}
               >
-                <span className={`text-lg font-semibold ${isToday ? 'font-bold' : ''}`}>
+                <span className={`text-base ${isToday ? 'font-bold' : ''}`}>
                   {dayNumber}
                 </span>
                 {hasSlots(date) && isWithinBookingWindow(date) && (
-                  <div className="flex gap-1 mt-1">
+                  <div className="flex gap-0.5 mt-1.5">
                     {[1, 2, 3].map((dot) => (
                       <div
                         key={dot}
-                        className="w-1 h-1 bg-white rounded-full opacity-70"
+                        className="w-1 h-1 bg-current rounded-full opacity-60"
                       />
                     ))}
                   </div>
                 )}
                 {isToday && (
-                  <span className="absolute -top-1 -right-1 text-xs font-bold text-blue-600">
-                    ●
-                  </span>
+                  <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-sm" />
                 )}
               </button>
             );
@@ -257,23 +260,23 @@ export default function TimeSlotSelector({
         </div>
 
         {/* Legend */}
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded"></div>
-              <span>Available</span>
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="w-4 h-4 bg-green-500 rounded-md shadow-sm"></div>
+              <span className="text-gray-700 font-medium">Available</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-100 rounded border border-blue-500"></div>
-              <span>Today</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-4 h-4 bg-blue-50 rounded-md border-2 border-blue-500 shadow-sm"></div>
+              <span className="text-gray-700 font-medium">Today</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gray-100 rounded border border-gray-300"></div>
-              <span>Unavailable</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-4 h-4 bg-gray-50 rounded-md border border-gray-300 shadow-sm"></div>
+              <span className="text-gray-700 font-medium">Unavailable</span>
             </div>
-            <div className="flex items-center gap-2 text-amber-600">
+            <div className="flex items-center gap-2.5 text-amber-600">
               <Info className="w-4 h-4" />
-              <span>Hover over dates for details</span>
+              <span className="font-medium">Hover for details</span>
             </div>
           </div>
         </div>
