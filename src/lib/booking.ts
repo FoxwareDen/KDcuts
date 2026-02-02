@@ -78,6 +78,29 @@ export async function getBookings(): Promise<Booking & { id: number }[] | null> 
   }
 }
 
+export async function getBookingsByUserId(user_id: string): Promise<Booking & { id: number }[] | null> {
+  try {
+    const { data, error } = await client.from("bookings").select("*").eq("user_id", user_id);
+
+    if (error) throw error;
+
+    // @ts-ignore
+    const bookings: Booking & { id: number }[] = data.map((row) => ({
+      id: row.id,
+      status: row.status,
+      date: row.date,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      updated_at: row.updated_at,
+      duration: row.duration
+    }));
+
+    return bookings;
+  } catch (error) {
+    return null
+  }
+}
+
 export async function updateBooking(booking_id: number, data: Partial<Booking>): Promise<any | null> {
   try {
     // 1. First, manually check what endpoint exists
