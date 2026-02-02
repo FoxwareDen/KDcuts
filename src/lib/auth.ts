@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { redirect } from "@tanstack/react-router";
 
 import { getUserSession, type UserSession } from "./db";
 
@@ -8,26 +7,27 @@ export type PermType = "user" | "admin" | "moderator";
 export async function checkAuthtozition(privilege: string) {
   const { initialized } = getAuthSession();
 
+  console.log("checkng initializtion")
+
   if (!initialized) {
+    console.log("not initialized")
     await intializeAuthSession();
   }
 
   const { user } = getAuthSession();
 
+
   if (!user) {
-    return redirect({
-      href: "/login",
-      search: {
-        redirect: location.href,
-      },
-    });
+    console.log("user not found")
+    return false;
   }
 
   if (privilege != user.user.role) {
-    return redirect({
-      href: "/unauthorized",
-    });
+    // TODO: adde a unauthorized page
+    return false;
   }
+
+  return true;
 }
 
 export interface AuthSession {

@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
-import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthDashboardIndexRouteImport } from './routes/_auth/dashboard/index'
@@ -18,10 +17,6 @@ import { Route as AuthDashboardIndexRouteImport } from './routes/_auth/dashboard
 const TestRoute = TestRouteImport.update({
   id: '/test',
   path: '/test',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -35,9 +30,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthDashboardIndexRoute = AuthDashboardIndexRouteImport.update({
-  id: '/dashboard/',
+  id: '/_auth/dashboard/',
   path: '/dashboard/',
-  getParentRoute: () => AuthRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -56,7 +51,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/_auth': typeof AuthRouteWithChildren
   '/test': typeof TestRoute
   '/_auth/dashboard/': typeof AuthDashboardIndexRoute
 }
@@ -65,14 +59,14 @@ export interface FileRouteTypes {
   fullPaths: '/' | '/$' | '/test' | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/$' | '/test' | '/dashboard'
-  id: '__root__' | '/' | '/$' | '/_auth' | '/test' | '/_auth/dashboard/'
+  id: '__root__' | '/' | '/$' | '/test' | '/_auth/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
-  AuthRoute: typeof AuthRouteWithChildren
   TestRoute: typeof TestRoute
+  AuthDashboardIndexRoute: typeof AuthDashboardIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +76,6 @@ declare module '@tanstack/react-router' {
       path: '/test'
       fullPath: '/test'
       preLoaderRoute: typeof TestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -110,26 +97,16 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AuthDashboardIndexRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface AuthRouteChildren {
-  AuthDashboardIndexRoute: typeof AuthDashboardIndexRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthDashboardIndexRoute: AuthDashboardIndexRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
-  AuthRoute: AuthRouteWithChildren,
   TestRoute: TestRoute,
+  AuthDashboardIndexRoute: AuthDashboardIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
