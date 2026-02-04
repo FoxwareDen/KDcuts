@@ -12,7 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthDashboardIndexRouteImport } from './routes/_auth/dashboard/index'
+import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
+import { Route as AuthDashboardIndexRouteImport } from './routes/_auth/dashboard.index'
+import { Route as AuthDashboardSettingsRouteImport } from './routes/_auth/dashboard.settings'
+import { Route as AuthDashboardAvailabilityRouteImport } from './routes/_auth/dashboard.availability'
+import { Route as AuthDashboardAppointmentsRouteImport } from './routes/_auth/dashboard.appointments'
 
 const TestRoute = TestRouteImport.update({
   id: '/test',
@@ -29,22 +33,51 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthDashboardIndexRoute = AuthDashboardIndexRouteImport.update({
-  id: '/_auth/dashboard/',
-  path: '/dashboard/',
+const AuthDashboardRoute = AuthDashboardRouteImport.update({
+  id: '/_auth/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthDashboardIndexRoute = AuthDashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthDashboardRoute,
+} as any)
+const AuthDashboardSettingsRoute = AuthDashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthDashboardRoute,
+} as any)
+const AuthDashboardAvailabilityRoute =
+  AuthDashboardAvailabilityRouteImport.update({
+    id: '/availability',
+    path: '/availability',
+    getParentRoute: () => AuthDashboardRoute,
+  } as any)
+const AuthDashboardAppointmentsRoute =
+  AuthDashboardAppointmentsRouteImport.update({
+    id: '/appointments',
+    path: '/appointments',
+    getParentRoute: () => AuthDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/test': typeof TestRoute
+  '/dashboard': typeof AuthDashboardRouteWithChildren
+  '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
+  '/dashboard/availability': typeof AuthDashboardAvailabilityRoute
+  '/dashboard/settings': typeof AuthDashboardSettingsRoute
   '/dashboard/': typeof AuthDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/test': typeof TestRoute
+  '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
+  '/dashboard/availability': typeof AuthDashboardAvailabilityRoute
+  '/dashboard/settings': typeof AuthDashboardSettingsRoute
   '/dashboard': typeof AuthDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -52,21 +85,49 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/test': typeof TestRoute
+  '/_auth/dashboard': typeof AuthDashboardRouteWithChildren
+  '/_auth/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
+  '/_auth/dashboard/availability': typeof AuthDashboardAvailabilityRoute
+  '/_auth/dashboard/settings': typeof AuthDashboardSettingsRoute
   '/_auth/dashboard/': typeof AuthDashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/test' | '/dashboard/'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/test'
+    | '/dashboard'
+    | '/dashboard/appointments'
+    | '/dashboard/availability'
+    | '/dashboard/settings'
+    | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/test' | '/dashboard'
-  id: '__root__' | '/' | '/$' | '/test' | '/_auth/dashboard/'
+  to:
+    | '/'
+    | '/$'
+    | '/test'
+    | '/dashboard/appointments'
+    | '/dashboard/availability'
+    | '/dashboard/settings'
+    | '/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/test'
+    | '/_auth/dashboard'
+    | '/_auth/dashboard/appointments'
+    | '/_auth/dashboard/availability'
+    | '/_auth/dashboard/settings'
+    | '/_auth/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   TestRoute: typeof TestRoute
-  AuthDashboardIndexRoute: typeof AuthDashboardIndexRoute
+  AuthDashboardRoute: typeof AuthDashboardRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -92,21 +153,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/dashboard': {
+      id: '/_auth/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth/dashboard/': {
       id: '/_auth/dashboard/'
-      path: '/dashboard'
+      path: '/'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AuthDashboardIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthDashboardRoute
+    }
+    '/_auth/dashboard/settings': {
+      id: '/_auth/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof AuthDashboardSettingsRouteImport
+      parentRoute: typeof AuthDashboardRoute
+    }
+    '/_auth/dashboard/availability': {
+      id: '/_auth/dashboard/availability'
+      path: '/availability'
+      fullPath: '/dashboard/availability'
+      preLoaderRoute: typeof AuthDashboardAvailabilityRouteImport
+      parentRoute: typeof AuthDashboardRoute
+    }
+    '/_auth/dashboard/appointments': {
+      id: '/_auth/dashboard/appointments'
+      path: '/appointments'
+      fullPath: '/dashboard/appointments'
+      preLoaderRoute: typeof AuthDashboardAppointmentsRouteImport
+      parentRoute: typeof AuthDashboardRoute
     }
   }
 }
+
+interface AuthDashboardRouteChildren {
+  AuthDashboardAppointmentsRoute: typeof AuthDashboardAppointmentsRoute
+  AuthDashboardAvailabilityRoute: typeof AuthDashboardAvailabilityRoute
+  AuthDashboardSettingsRoute: typeof AuthDashboardSettingsRoute
+  AuthDashboardIndexRoute: typeof AuthDashboardIndexRoute
+}
+
+const AuthDashboardRouteChildren: AuthDashboardRouteChildren = {
+  AuthDashboardAppointmentsRoute: AuthDashboardAppointmentsRoute,
+  AuthDashboardAvailabilityRoute: AuthDashboardAvailabilityRoute,
+  AuthDashboardSettingsRoute: AuthDashboardSettingsRoute,
+  AuthDashboardIndexRoute: AuthDashboardIndexRoute,
+}
+
+const AuthDashboardRouteWithChildren = AuthDashboardRoute._addFileChildren(
+  AuthDashboardRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   TestRoute: TestRoute,
-  AuthDashboardIndexRoute: AuthDashboardIndexRoute,
+  AuthDashboardRoute: AuthDashboardRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
