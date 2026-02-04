@@ -3,6 +3,7 @@ export { sortBookingBy } from "./bookings";
 import { addSeconds, isAfter, parseISO } from "date-fns";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { Calendar } from "../calender.ts";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -11,8 +12,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Convert ISO string to PostgreSQL DATE format (YYYY-MM-DD)
  */
-export function isoToPgDate(isoString: string) {
-  if (!isoString) return null;
+export function isoToPgDate(isoString: string): string {
   return isoString.split('T')[0];
 }
 
@@ -61,6 +61,38 @@ export function writeTimeStamp(action: string) {
 export function readTimeStamp(action: string): Date | null {
   const value = localStorage.getItem(action);
   return value ? parseISO(value) : null;
+}
+
+// First, let's define the proper CalendarEntry type that matches your database
+export interface CalendarEntry {
+  date: string; // DATE (YYYY-MM-DD format)
+  start_time: string; // TIME format
+  end_time: string; // TIME format
+  user_id: string | null; // UUID
+}
+
+// Helper function to convert Calendar objects to database format
+export function convertCalendarToEntry(calendar: Calendar): CalendarEntry {
+  // Assuming Calendar has properties like:
+  // start: ISO string, end: ISO string, duration in milliseconds, user_id, etc.
+
+  // Convert date to PostgreSQL DATE format
+  const date: string = isoToPgDate(calendar.start_time) || isoToPgDate(new Date().toISOString());
+
+  // Convert start and end times to PostgreSQL TIME format
+  // You might need to extract just the time part from ISO strings
+  const startTime = calendar.start_time.split('T')[1]?.slice(0, 8) || '00:00:00';
+  const endTime = calendar.end_time.split('T')[1]?.slice(0, 8) || '00:00:00';
+
+  // Or if you have milliseconds for duration, convert to seconds/minutes as needed
+  // Assuming duration is in minutes for your INTEGER field
+
+  return {
+    date, // Fallback to today
+    start_time: startTime,
+    end_time: endTime,
+    user_id: calendar?.user_id || null // Make sure this is provided
+  };
 }
 
 /**

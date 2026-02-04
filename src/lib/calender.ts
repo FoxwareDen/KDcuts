@@ -1,6 +1,7 @@
 import { addDays, parseISO, format, parse, addMonths, startOfDay, isAfter, isBefore, differenceInDays } from 'date-fns';
 import type { Booking } from './booking';
 import { client } from './db';
+import { convertCalendarToEntry, type CalendarEntry } from './utils';
 
 export interface Calendar {
   start_date: string;
@@ -10,11 +11,35 @@ export interface Calendar {
   days_of_week: number[];
   frequency?: "weekly";
   buffer_minutes?: number;
+  user_id?: string
 }
 
+/**
+ * Inserts multiple calendar entries into the database.
+ * 
+ * @param  calendars - Array of calendar objects to insert
+ * @returns Original calendars array if successful, null on error
+ * 
+ * @example
+ * const calendars = [{
+ *   start_date: '2024-01-15',
+ *   end_date: '2024-01-15',
+ *   start_time: '09:00:00',
+ *   end_time: '10:30:00',
+ *   days_of_week: [0-6],
+ *   frequency: 'weekly',
+ *   buffer_minutes: 15,
+ *   user_id: 'uuid-here'
+ * }];
+ * 
+ * const result = await addCalendarEntries(calendars);
+ */
 export async function addCalenderEntries(calendars: Calendar[]) {
   try {
-    const { error } = await client.from("calendar").insert(calendars);
+    const calendarEntries: CalendarEntry[] = calendars.map(convertCalendarToEntry);
+
+    const { error } = await client.from("calendar").insert(calendarEntries);
+
 
     if (error) throw error;
 
