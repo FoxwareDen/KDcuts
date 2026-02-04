@@ -267,7 +267,7 @@ export default function TimeSlotSelector({
               <span className="text-gray-700 font-medium">Available</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="w-4 h-4 bg-blue-50 rounded-md border-2 border-blue-500 shadow-sm"></div>
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full  shadow-sm"></div>
               <span className="text-gray-700 font-medium">Today</span>
             </div>
             <div className="flex items-center gap-2.5">
