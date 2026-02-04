@@ -168,9 +168,9 @@ export default function TimeSlotSelector({
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Calendar className="w-7 h-7 text-blue-600" />
+        <Calendar className="w-7 h-7 text-primary" />
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Select Appointment Date</h2>
+          <h2 className="text-xl font-bold text-gray-800">Select Appointment Date</h2>
           <p className="text-sm text-gray-600 mt-1">
             Bookings available from {format(minBookingDate, 'MMM d')} to {format(maxBookingDate, 'MMM d')}
           </p>
