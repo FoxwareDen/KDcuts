@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, ArrowRight, Calendar as Cal, X } from "lucide-react";
+import { Clock, ArrowRight, Calendar as Cal, X , Check } from "lucide-react";
 import { generateAvailableSlots, getCalenderEntries, getSlotGenerationConfig, validateBookingTime, type AvailableSlot, type SlotGenerationConfig } from "@/lib/calender";
 import { addDays, addMonths, format, parseISO } from "date-fns";
 import { addBooking, getBookings, type Booking } from "@/lib/booking";
@@ -83,6 +83,7 @@ export function BookingSection() {
   // TODO: tied page state to loading of slots and handle submition  
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
   // 
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const { data: availableSlots, loading: isLoadingSlots, error: slotsError } = useFetch<AvailableSlot[]>(fetchAndGenerateAvalibleSlots);
@@ -116,6 +117,16 @@ export function BookingSection() {
           phone: formData.phone,
           service: selectedServiceData?.name
         })
+        if (res){
+          setIsSuccess(true);
+          //Auto-close modal on successful submission and reset form after 3 seconds
+          setTimeout(() =>{
+            setIsSuccess(false);
+            setSelectedSlot(null);
+            setSelectedService("");
+            setFormData({ name: "", email: "", phone: ""});
+          }, 5000)
+        }
 
 
       } catch (error) {
@@ -267,10 +278,10 @@ export function BookingSection() {
               <Button
                 className="w-full"
                 size="lg"
-                disabled={!canSubmit}
+                disabled={!canSubmit || isLoading}
                 onClick={handleSubmit}
               >
-                Confirm Booking
+                {isLoading ? "processing...": "Confirm Booking"}
                 <ArrowRight className="ml-2 size-4" />
               </Button>
             </div>
@@ -278,6 +289,70 @@ export function BookingSection() {
 
         </div>
       </div>
+
+      {/* Success Modal */}
+      {isSuccess && selectedSlot && selectedServiceData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 animate-in fade-in zoom-in duration-300">
+            {/* Success Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+                <Check className="w-10 h-10 text-white stroke-[3]" />
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">
+              Booking Confirmed!
+            </h3>
+            <p className="text-center text-gray-600 mb-6">
+              Your appointment has been successfully scheduled
+            </p>
+
+            {/* Booking Details */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 space-y-3">
+              <div className="flex items-start gap-3">
+                <Cal className="w-5 h-5 text-green-700 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-green-900">Date & Time</p>
+                  <p className="text-sm text-green-800">
+                    {format(parseISO(selectedSlot.date), 'EEEE, MMMM d, yyyy')}
+                  </p>
+                  <p className="text-sm text-green-800">
+                    {selectedSlot.start_time} - {selectedSlot.end_time}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-green-700 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-green-900">Service</p>
+                  <p className="text-sm text-green-800">{selectedServiceData.name}</p>
+                  <p className="text-sm text-green-800">{selectedSlot.duration} minutes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setIsSuccess(false);
+                setSelectedSlot(null);
+                setSelectedService("");
+                setFormData({ name: "", email: "", phone: "" });
+              }}
+              className="mt-6 w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md"
+            >
+              Close
+            </button>
+
+            <p className="text-center text-xs text-gray-500 mt-4">
+              A confirmation email has been sent to {formData.email}
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
