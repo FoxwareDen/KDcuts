@@ -37,9 +37,13 @@ export function Header() {
         </div>
 
         <nav className="hidden items-center gap-6 md:flex">
-          <Link to="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Dashboard
-          </Link>
+          {
+            isAdmin && (
+              <Link to="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Dashboard
+              </Link>
+            )
+          }
           <Link
             to="/#services"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
