@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
@@ -21,6 +22,11 @@ import { Route as AuthDashboardAppointmentsRouteImport } from './routes/_auth/da
 const TestRoute = TestRouteImport.update({
   id: '/test',
   path: '/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -64,6 +70,7 @@ const AuthDashboardAppointmentsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/login': typeof LoginRoute
   '/test': typeof TestRoute
   '/dashboard': typeof AuthDashboardRouteWithChildren
   '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/login': typeof LoginRoute
   '/test': typeof TestRoute
   '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
   '/dashboard/availability': typeof AuthDashboardAvailabilityRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/login': typeof LoginRoute
   '/test': typeof TestRoute
   '/_auth/dashboard': typeof AuthDashboardRouteWithChildren
   '/_auth/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/login'
     | '/test'
     | '/dashboard'
     | '/dashboard/appointments'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/login'
     | '/test'
     | '/dashboard/appointments'
     | '/dashboard/availability'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/login'
     | '/test'
     | '/_auth/dashboard'
     | '/_auth/dashboard/appointments'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  LoginRoute: typeof LoginRoute
   TestRoute: typeof TestRoute
   AuthDashboardRoute: typeof AuthDashboardRouteWithChildren
 }
@@ -137,6 +150,13 @@ declare module '@tanstack/react-router' {
       path: '/test'
       fullPath: '/test'
       preLoaderRoute: typeof TestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -212,6 +232,7 @@ const AuthDashboardRouteWithChildren = AuthDashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  LoginRoute: LoginRoute,
   TestRoute: TestRoute,
   AuthDashboardRoute: AuthDashboardRouteWithChildren,
 }

@@ -22,14 +22,6 @@ export function Header() {
   };
 
 
-  const handleButtonClick = async () => {
-    if (!user) {
-      await signInWithAuth();
-    } else {
-      await signOut();
-    }
-    setIsMobileMenuOpen(false);
-  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -61,9 +53,9 @@ export function Header() {
           >
             Services
           </Link>
-          <button onClick={handleButtonClick} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            {user ? "Logout" : "Login"}
-          </button>
+          <Link to="/login" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            Login
+          </Link>
 
         </nav>
 
@@ -108,6 +100,12 @@ export function Header() {
             >
               Services
             </Link>
+            <Link
+              to="/login"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Login
+            </Link>
             <a
               href="tel:+15551234567"
               onClick={handleLinkClick}
@@ -120,9 +118,6 @@ export function Header() {
               <a href="/#booking" onClick={handleLinkClick}>
                 Book Appointment
               </a>
-            </Button>
-            <Button onClick={signInWithAuth} className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-              {user ? "Logout" : "Login"}
             </Button>
           </nav>
         </div>
