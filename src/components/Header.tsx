@@ -1,21 +1,23 @@
-import { checkAuthtozition, useAuthSession } from "@/lib/auth";
 import { Link } from "@tanstack/react-router";
 import { Scissors, Phone, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { signInWithAuth, signOut } from "@/lib/db";
+import { client } from "@/lib/db";
 
 export function Header() {
-  const { user } = useAuthSession();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const res = await checkAuthtozition("admin");
-      setIsAdmin(res);
+      const {data} = await client.auth.getSession();
+
+      if (data?.user && data.user.role == "admin") {
+        setIsAdmin(true)
+      };
+
     })();
-  }, [user]);
+  }, []);
 
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);

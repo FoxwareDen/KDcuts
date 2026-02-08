@@ -1,20 +1,12 @@
 import { create } from "zustand";
+import { getUserSession } from "@/lib/db";
 
-import { getUserSession, type UserSession } from "./db";
+import { type UserSession } from "./db";
 
 export type PermType = "user" | "admin" | "moderator";
 
 export async function checkAuthtozition(privilege: string) {
-  const { initialized } = getAuthSession();
-
-  console.log("checkng initializtion")
-
-  if (!initialized) {
-    console.log("not initialized")
-    await intializeAuthSession();
-  }
-
-  const { user } = getAuthSession();
+  const user = await getUserSession();
 
 
   if (!user) {
@@ -22,12 +14,11 @@ export async function checkAuthtozition(privilege: string) {
     return false;
   }
 
-  if (privilege != user.user.role) {
-    // TODO: adde a unauthorized page
-    return false;
+  if (user?.user && user.user.role == privilege) {
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 export interface AuthSession {
@@ -63,20 +54,3 @@ export const useAuthSession = create<boop>()((set) => ({
 
 export function setAuthSession(data: Partial<AuthSession>) {
   useAuthSession.setState(data)
-}
-
-export function getAuthSession() {
-  return useAuthSession.getState(); // NOT a hook
-}
-
-export async function intializeAuthSession() {
-  const session = await getUserSession()
-
-  if (session) {
-    setAuthSession({ user: session, isAuthenticated: true });
-  }
-
-  setAuthSession({ initialized: true });
-
-  return session;
-}
