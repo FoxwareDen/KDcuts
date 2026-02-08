@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from 'react';
 import { Mail, Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
+import { signInWithAuth, signInWithEmail, signUpWithEmail } from "@/lib/db";
 
 
 export const Route = createFileRoute('/login')({
@@ -23,8 +23,8 @@ export const Route = createFileRoute('/login')({
       setError('');
       try {
         // Add your Google OAuth logic here
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulated delay
-        console.log('Google sign-in initiated');
+        await signInWithAuth();
+
       } catch (err) {
         setError('Failed to sign in with Google. Please try again.');
       } finally {
@@ -48,17 +48,22 @@ export const Route = createFileRoute('/login')({
           throw new Error('Please enter your password');
         }
 
-        // Add your authentication logic here
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulated delay
-
         if (mode === 'login') {
-          console.log('Login submitted:', formData);
+          const res = await signInWithEmail(formData.email, formData.password);
+
+          if (res) window.location.href = "/";
+
+
         } else if (mode === 'signup') {
-          console.log('Signup submitted:', formData);
+          const res = await signUpWithEmail(formData.name, formData.email, formData.password);
+
+          if (res) window.location.href = "/";
+
         } else if (mode === 'reset') {
           console.log('Password reset requested for:', formData.email);
         }
       } catch (err) {
+        console.error(err);
         setError(err.message);
       } finally {
         setIsLoading(false);

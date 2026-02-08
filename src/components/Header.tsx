@@ -2,19 +2,24 @@ import { Link } from "@tanstack/react-router";
 import { Scissors, Phone, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { client } from "@/lib/db";
+import { getUserSession, signOut } from "@/lib/db";
 
 export function Header() {
+  const [isAuth, setIsAuth] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const {data} = await client.auth.getSession();
+      const data = await getUserSession();
 
-      if (data?.user && data.user.role == "admin") {
-        setIsAdmin(true)
-      };
+      if (data) {
+        setIsAuth(true);
+
+        if (data.user.role == "admin") {
+          setIsAdmin(true)
+        }
+      }
 
     })();
   }, []);
@@ -23,7 +28,12 @@ export function Header() {
     setIsMobileMenuOpen(false);
   };
 
-
+  const handleLogOut = async () => {
+    await signOut();
+    setIsAuth(false);
+    setIsAdmin(false);
+    window.location.href = window.location.origin
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -55,9 +65,23 @@ export function Header() {
           >
             Services
           </Link>
-          <Link to="/login" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Login
-          </Link>
+          {
+            isAuth ? (
+              <button
+                onClick={handleLogOut}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Login
+              </Link>
+            )
+          }
 
         </nav>
 

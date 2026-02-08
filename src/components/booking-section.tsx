@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, ArrowRight, Calendar as Cal, X , Check } from "lucide-react";
+import { Clock, ArrowRight, Calendar as Cal, X, Check } from "lucide-react";
 import { generateAvailableSlots, getCalenderEntries, getSlotGenerationConfig, validateBookingTime, type AvailableSlot, type SlotGenerationConfig } from "@/lib/calender";
 import { addDays, addMonths, format, parseISO } from "date-fns";
 import { addBooking, getBookings, type Booking } from "@/lib/booking";
 import TimeSlotSelector from "./TimeSlotSelector";
-import { useAuthSession } from "@/lib/auth";
 import useFetch from "@/hooks/useFetch";
+import { getUserSession } from "@/lib/db";
 
 const services = [
   { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 40 },
@@ -78,7 +78,6 @@ const fetchAndGenerateAvalibleSlots = async () => {
 // Simulated barber availability (in real app, this would come from a database/API)
 
 export function BookingSection() {
-  const { user } = useAuthSession();
   // page state
   // TODO: tied page state to loading of slots and handle submition  
   const [error, setError] = useState<string | null>(null);
@@ -104,30 +103,31 @@ export function BookingSection() {
     if (canSubmit && selectedSlot) {
       setIsLoading(true);
       try {
+        const data = await getUserSession();
+
         // TODO: add feed back if failed bool red
         const res = await addBooking({
           date: selectedSlot.date,
           start_time: selectedSlot.start_time + ':00', // Add seconds
           end_time: selectedSlot.end_time + ':00',     // Add seconds  
           duration: Number(selectedSlot.duration),
-          user_id: user?.user.id || null
+          user_id: data?.user.id || null
         }, {
           email: formData.email,
           name: formData.name,
           phone: formData.phone,
           service: selectedServiceData?.name
         })
-        if (res){
+        if (res) {
           setIsSuccess(true);
           //Auto-close modal on successful submission and reset form after 3 seconds
-          setTimeout(() =>{
+          setTimeout(() => {
             setIsSuccess(false);
             setSelectedSlot(null);
             setSelectedService("");
-            setFormData({ name: "", email: "", phone: ""});
+            setFormData({ name: "", email: "", phone: "" });
           }, 5000)
         }
-
 
       } catch (error) {
         console.error(error);
@@ -281,7 +281,7 @@ export function BookingSection() {
                 disabled={!canSubmit || isLoading}
                 onClick={handleSubmit}
               >
-                {isLoading ? "processing...": "Confirm Booking"}
+                {isLoading ? "processing..." : "Confirm Booking"}
                 <ArrowRight className="ml-2 size-4" />
               </Button>
             </div>

@@ -1,6 +1,6 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
-import { checkAuthtozition } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { checkAuthtozition } from "@/lib/db";
 
 export const Route = createFileRoute("/_auth/dashboard")({
   beforeLoad: async () => {

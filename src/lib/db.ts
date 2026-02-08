@@ -1,5 +1,4 @@
 import { createClient } from "@neondatabase/neon-js";
-import { setAuthSession } from "./auth";
 
 export const client = createClient({
   auth: {
@@ -52,6 +51,21 @@ export async function getUserSession(): Promise<UserSession | null> {
   }
 }
 
+export async function checkAuthtozition(privilege: string): Promise<boolean> {
+  try {
+    const data = await getUserSession();
+
+    if (data && data.user.role === privilege) {
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error(error as Error);
+    return false;
+  }
+}
+
 export async function signInWithAuth() {
   try {
     const { error } = await client.auth.signIn.social({
@@ -63,8 +77,6 @@ export async function signInWithAuth() {
 
     const userSession = await getUserSession();
 
-    setAuthSession({ user: userSession, isAuthenticated: true });
-
     return userSession;
   } catch (error) {
     console.error(error as Error);
@@ -72,14 +84,44 @@ export async function signInWithAuth() {
   }
 }
 
+export async function signInWithEmail(email: string, password: string) {
+  try {
+    const { data, error } = await client.auth.signIn.email({ email, password });
+    if (error) throw error;
+
+    const userSession = await getUserSession();
+
+    if (!userSession) throw new Error("User session not found");
+
+    return data;
+  } catch (error) {
+    console.error(error as Error);
+    return null;
+  }
+}
+
+export async function signUpWithEmail(name: string, email: string, password: string) {
+  try {
+    const { data, error } = await client.auth.signUp.email({
+      email, name, password,
+    });
+
+    if (error) throw error;
+
+    const userSession = await getUserSession();
+
+    if (!userSession) throw new Error("User session not found");
+
+    return data;
+  } catch (error) {
+    console.error(error as Error);
+    return null;
+  }
+}
 
 export async function signOut() {
   try {
     await client.auth.signOut();
-    setAuthSession({
-      user: null,
-      isAuthenticated: false
-    });
   } catch (error) {
     console.error(error);
     return null;
@@ -90,4 +132,3 @@ export interface MetaData {
   id: number,
   created_at: string,
 }
-
