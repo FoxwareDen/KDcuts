@@ -108,13 +108,42 @@ export async function signUpWithEmail(name: string, email: string, password: str
 
     if (error) throw error;
 
-    const userSession = await getUserSession();
+    return data;
+  } catch (error) {
+    console.error(error as Error);
+    return null;
+  }
+}
 
-    if (!userSession) throw new Error("User session not found");
+export async function sendOTP(email: string, type: "forget-password" = "forget-password") {
+  try {
+    const { data, error } = await client.auth.emailOtp.sendVerificationOtp({
+      email,
+      type
+    })
+
+    if (error) throw error;
 
     return data;
   } catch (error) {
     console.error(error as Error);
+    return null;
+  }
+}
+
+export async function resetPassword(email: string, otp: string, password: string) {
+  try {
+    const { data, error } = await client.auth.emailOtp.resetPassword({
+      email,
+      otp,
+      password
+    });
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error("OTP verification failed:", error);
     return null;
   }
 }
