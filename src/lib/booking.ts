@@ -1,9 +1,13 @@
+import { startOfDay } from "date-fns";
 import { client, type MetaData } from "./db.ts";
 import { isoToPgDate } from "./utils";
 
+
+export type BookingStatus = "pending" | "completed" | "rescheduled" | "cancelled";
+
 export interface Booking {
   id: number;
-  status: "pending" | "completed" | "rescheduled" | "cancelled";
+  status: BookingStatus;
   date: string;
   start_time: string;
   end_time: string;
@@ -57,12 +61,13 @@ export async function addBooking(
   }
 }
 
-export async function getBookings(): Promise<Booking & { id: number }[] | null> {
+export async function getBookings(): Promise<Booking[] | null> {
   try {
     const { data } = await client.from("bookings").select("*");
 
-    // @ts-ignore
-    const bookings: Booking & { id: number }[] = data.map((row) => ({
+    if (!data) throw new Error('No bookings found');
+
+    const bookings: Booking[] = data.map((row) => ({
       id: row.id,
       status: row.status,
       date: row.date,
@@ -74,7 +79,27 @@ export async function getBookings(): Promise<Booking & { id: number }[] | null> 
 
     return bookings;
   } catch (error) {
+    console.error(error as Error);
     return null
+  }
+}
+
+export async function updateBookingStatus(id: number, status: BookingStatus): Promise<boolean> {
+  try {
+    const { error } = await client.from("bookings").update({ status }).eq("id", id);
+
+    if (error) throw error;
+
+    if (status == "completed" || status == "cancelled") {
+      const { error } = await client.from("booking_data").delete().eq("booking_id", id);
+
+      if (error) throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(error as Error);
+    return false;
   }
 }
 
@@ -98,6 +123,44 @@ export async function getBookingsByUserId(user_id: string): Promise<Booking & { 
     return bookings;
   } catch (error) {
     return null
+  }
+}
+
+interface FullBooking extends Booking, BookingClientData { }
+
+export async function getBulkBookings(): Promise<FullBooking[] | null> {
+  try {
+    const bookings = await getBookings();
+
+    if (!bookings) throw new Error('No bookings found');
+
+    const fullBookings: FullBooking[] = [];
+
+    for (const booking of bookings) {
+      const bookingDetails = await getBookingDetailsByID(booking.id);
+
+      if (bookingDetails) {
+        fullBookings.push({
+          id: booking.id,
+          status: booking.status,
+          date: booking.date,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+          email: bookingDetails.email,
+          service: bookingDetails.service,
+          booking_id: booking.id,
+          name: bookingDetails.name,
+          phone: bookingDetails.phone,
+          duration: booking.duration,
+          updated_at: booking.updated_at,
+        });
+      }
+    }
+
+    return fullBookings;
+  } catch (error) {
+    console.error(error);
+    return null;
   }
 }
 

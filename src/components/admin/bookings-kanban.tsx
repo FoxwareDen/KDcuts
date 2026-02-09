@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,103 +18,27 @@ import {
   User,
   Check,
   X,
-  MoreHorizontal,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { Booking, BookingStatus } from "@/lib/types";
+
+import { getBulkBookings, updateBookingStatus, type Booking, type BookingClientData, type BookingStatus } from "@/lib/booking";
+
+interface FullBooking extends Booking, BookingClientData { }
 
 // Mock data
-const initialBookings: Booking[] = [
+const initialBookings: FullBooking[] = [
   {
-    id: "1",
-    client_name: "John Smith",
-    client_email: "john@email.com",
-    client_phone: "+1 234 567 8900",
-    service_id: "classic-cut",
-    service_name: "Classic Haircut",
-    price: 100,
+    id: 1,
+    status: "pending",
     date: "2026-02-04",
     start_time: "10:00",
     end_time: "10:30",
-    status: "pending",
-    created_at: "2026-02-02T10:00:00Z",
-  },
-  {
-    id: "2",
-    client_name: "Mike Johnson",
-    client_email: "mike@email.com",
-    client_phone: "+1 234 567 8901",
-    service_id: "beard-trim",
-    service_name: "Beard Trim & Shape",
-    price: 100,
-    date: "2026-02-04",
-    start_time: "11:00",
-    end_time: "11:20",
-    status: "confirmed",
-    created_at: "2026-02-01T14:00:00Z",
-  },
-  {
-    id: "3",
-    client_name: "David Wilson",
-    client_email: "david@email.com",
-    client_phone: "+1 234 567 8902",
-    service_id: "full-service",
-    service_name: "The Full Experience",
-    price: 100,
-    date: "2026-02-04",
-    start_time: "14:00",
-    end_time: "14:45",
-    status: "in-progress",
-    notes: "Prefers shorter on the sides",
-    created_at: "2026-01-30T09:00:00Z",
-  },
-  {
-    id: "4",
-    client_name: "Chris Brown",
-    client_email: "chris@email.com",
-    client_phone: "+1 234 567 8903",
-    service_id: "classic-cut",
-    service_name: "Classic Haircut",
-    price: 100,
-    date: "2026-02-03",
-    start_time: "09:00",
-    end_time: "09:30",
-    status: "completed",
-    created_at: "2026-01-28T11:00:00Z",
-  },
-  {
-    id: "5",
-    client_name: "Alex Turner",
-    client_email: "alex@email.com",
-    client_phone: "+1 234 567 8904",
-    service_id: "full-service",
-    service_name: "The Full Experience",
-    price: 100,
-    date: "2026-02-05",
-    start_time: "15:00",
-    end_time: "15:45",
-    status: "pending",
-    created_at: "2026-02-03T16:00:00Z",
-  },
-  {
-    id: "6",
-    client_name: "Sam Lee",
-    client_email: "sam@email.com",
-    client_phone: "+1 234 567 8905",
-    service_id: "beard-trim",
-    service_name: "Beard Trim & Shape",
-    price: 100,
-    date: "2026-02-02",
-    start_time: "10:00",
-    end_time: "10:20",
-    status: "cancelled",
-    notes: "Client requested cancellation",
-    created_at: "2026-01-25T08:00:00Z",
+    email: "john@email",
+    service: "Classic Haircut",
+    booking_id: 2,
+    name: "John Smith",
+    phone: "+1 234 567 8900",
+    duration: 30,
+    updated_at: "2023-01-01T10:00:00.000Z",
   },
 ];
 
@@ -128,8 +52,8 @@ function BookingCard({
   booking,
   onStatusChange,
 }: {
-  booking: Booking;
-  onStatusChange: (id: string, status: BookingStatus) => void;
+  booking: FullBooking;
+  onStatusChange: (id: number, status: BookingStatus) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -150,10 +74,10 @@ function BookingCard({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <CardTitle className="truncate text-sm font-medium text-foreground">
-                  {booking.client_name}
+                  {booking.name}
                 </CardTitle>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {booking.service_name}
+                  {booking.service}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
@@ -181,34 +105,33 @@ function BookingCard({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs text-foreground">
                   <User className="size-3 text-primary" />
-                  <span>{booking.client_name}</span>
+                  <span>{booking.name}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-foreground">
                   <Mail className="size-3 text-primary" />
-                  <span className="truncate">{booking.client_email}</span>
+                  <span className="truncate">{booking.email}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-foreground">
                   <Phone className="size-3 text-primary" />
-                  <span>{booking.client_phone}</span>
+                  <span>{booking.phone}</span>
                 </div>
               </div>
 
-              {/* Price & Time */}
               <div className="flex items-center justify-between rounded-lg bg-secondary/50 p-2">
-                <span className="text-xs text-muted-foreground">Total</span>
+                <span className="text-xs text-muted-foreground">Time</span>
                 <span className="text-sm font-semibold text-foreground">
-                  ${booking.price}
+                  {booking.start_time}
                 </span>
               </div>
 
               {/* Notes */}
-              {booking.notes && (
-                <div className="rounded-lg bg-secondary/50 p-2">
-                  <p className="text-xs text-muted-foreground">
-                    Note: {booking.notes}
-                  </p>
-                </div>
-              )}
+              {/* {booking.notes && ( */}
+              {/*   <div className="rounded-lg bg-secondary/50 p-2"> */}
+              {/*     <p className="text-xs text-muted-foreground"> */}
+              {/*       Note: {booking.} */}
+              {/*     </p> */}
+              {/*   </div> */}
+              {/* )} */}
 
               {/* Actions */}
               <div className="flex items-center gap-2 pt-2">
@@ -217,10 +140,10 @@ function BookingCard({
                     <Button
                       size="sm"
                       className="h-7 flex-1 gap-1 text-xs"
-                      onClick={() => onStatusChange(booking.id, "confirmed")}
+                      onClick={() => onStatusChange(booking.id, "completed")}
                     >
                       <Check className="size-3" />
-                      Confirm
+                      Completed
                     </Button>
                     <Button
                       size="sm"
@@ -229,74 +152,17 @@ function BookingCard({
                       onClick={() => onStatusChange(booking.id, "cancelled")}
                     >
                       <X className="size-3" />
-                      Cancel
+                      Cancelled
                     </Button>
                   </>
                 )}
-                {booking.status === "confirmed" && (
-                  <Button
-                    size="sm"
-                    className="h-7 flex-1 text-xs"
-                    onClick={() => onStatusChange(booking.id, "in-progress")}
-                  >
-                    Start Session
-                  </Button>
-                )}
-                {booking.status === "in-progress" && (
-                  <Button
-                    size="sm"
-                    className="h-7 flex-1 text-xs"
-                    onClick={() => onStatusChange(booking.id, "completed")}
-                  >
-                    Mark Complete
-                  </Button>
-                )}
                 {(booking.status === "completed" ||
                   booking.status === "cancelled") && (
-                  <p className="w-full text-center text-xs text-muted-foreground">
-                    No actions available
-                  </p>
-                )}
+                    <p className="w-full text-center text-xs text-muted-foreground">
+                      No actions available
+                    </p>
+                  )}
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 shrink-0 p-0"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => onStatusChange(booking.id, "pending")}
-                    >
-                      Move to Pending
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onStatusChange(booking.id, "confirmed")}
-                    >
-                      Move to Confirmed
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onStatusChange(booking.id, "in-progress")}
-                    >
-                      Move to In Progress
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onStatusChange(booking.id, "completed")}
-                    >
-                      Move to Completed
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onStatusChange(booking.id, "cancelled")}
-                      className="text-destructive"
-                    >
-                      Cancel Booking
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
           </CollapsibleContent>
@@ -307,9 +173,25 @@ function BookingCard({
 }
 
 export function BookingsKanban() {
-  const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+  const [bookings, setBookings] = useState<FullBooking[]>([]);
 
-  const handleStatusChange = (id: string, newStatus: BookingStatus) => {
+  useEffect(() => {
+    getBulkBookings().then((bookings) => {
+      if (bookings) {
+        setBookings(bookings);
+      }
+    }).catch((error) => {
+      console.error(error);
+    })
+  }, [])
+
+
+  const handleStatusChange = async (id: number, newStatus: BookingStatus) => {
+    // TODO: update booking detail
+    const res = await updateBookingStatus(id, newStatus);
+
+    if (!res) return;
+
     setBookings((prev) =>
       prev.map((booking) =>
         booking.id === id ? { ...booking, status: newStatus } : booking
