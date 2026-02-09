@@ -1,19 +1,70 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Check } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
+import { addService, deleteService, getServices, type Service } from "@/lib/settings";
+import type { MetaData } from "@/lib/db";
 
 export const Route = createFileRoute("/_auth/dashboard/settings")({
-  component: function () {
+  component: function() {
+    const [services, setServices] = useState<
+      (Service & { tempId: string } & Partial<MetaData>)[]
+    >([]);
+    const [deletedServices, setDeletedServices] = useState<(Service & { tempId: string } & MetaData)[]>([]);
     const [saved, setSaved] = useState(false);
 
-    const handleSave = () => {
+    useEffect(() => {
+      getServices().then((services) => {
+        if (services) {
+          const newServices = services.map((service) => {
+            return { ...service, tempId: `${Date.now()}` }
+          }) as (Service & { tempId: string } & Partial<MetaData>)[]
+          setServices(newServices);
+        }
+      });
+    }, [])
+
+    const addNewService = () => {
+      setServices([...services, { service: "", price: 0, tempId: `${Date.now()}` }]);
+    };
+
+    const handleServiceInputChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+      const newServices = services.map(service => {
+        if (service.tempId == id) {
+          return { ...service, [e.target.name]: e.target.value }
+        }
+        return service
+      });
+      setServices(newServices);
+    };
+
+    const handleDeleteService = (tempId: string) => {
+      const deletedService = services.find(service => service.tempId == tempId);
+
+      if (deletedService?.id != undefined) {
+        setDeletedServices([...deletedServices, deletedService as Service & { tempId: string } & MetaData]);
+        setServices(services.filter(service => service.tempId != tempId));
+      } else {
+        setServices(services.filter(service => service.tempId != tempId));
+      }
+    }
+
+    const handleSave = async () => {
+      const newServices = services.filter((service) => {
+        // @ts-ignore
+        return service.id == undefined && service.service?.length > 0
+      })
+
+      // TODO: 
+
       setSaved(true);
+      // DELETES removed addService
+      await Promise.all(deletedServices.map(service => deleteService(service.id)));
+      // ADDS new services
+      await Promise.all(newServices.map(service => addService(service.service, service.price)));
       setTimeout(() => setSaved(false), 3000);
     };
 
@@ -40,8 +91,68 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Business Info */}
-          <Card className="border-border">
+          {/* Services & Pricing */}
+          <Card className="border-border lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">
+                Services & Pricing
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {services.map((service) => (
+                  <div
+                    key={service.tempId}
+                    className="flex flex-col gap-4 rounded-lg border border-border bg-secondary/30 p-4 sm:flex-row sm:items-end"
+                  >
+                    <div className="flex-1">
+                      <Label>Service Name</Label>
+                      <Input
+                        name="service"
+                        defaultValue={service.service}
+                        onChange={(e) => handleServiceInputChange(service.tempId, e)}
+                        className="mt-1.5 border-border bg-card"
+                      />
+                    </div>
+
+                    <div className="w-full sm:w-32">
+                      <Label>Price (R)</Label>
+                      <Input
+                        type="number"
+                        name="price"
+                        defaultValue={service.price}
+                        onChange={(e) => handleServiceInputChange(service.tempId, e)}
+                        className="mt-1.5 border-border bg-card"
+                      />
+                    </div>
+
+                    {/* Delete button */}
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDeleteService(service.tempId)}
+                      className="sm:ml-2"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+
+                <Button onClick={addNewService} variant="outline" className="w-full border-border bg-transparent">
+                  Add New Service
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+})
+
+
+/*
+ *           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">
                 Business Information
@@ -92,8 +203,6 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
               </div>
             </CardContent>
           </Card>
-
-          {/* Notifications */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">
@@ -143,71 +252,4 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
               </div>
             </CardContent>
           </Card>
-
-          {/* Services & Pricing */}
-          <Card className="border-border lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">
-                Services & Pricing
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  {
-                    name: "Classic Haircut",
-                    duration: "30",
-                    price: "100",
-                  },
-                  {
-                    name: "Beard Trim & Shape",
-                    duration: "20",
-                    price: "100",
-                  },
-                  {
-                    name: "The Full Experience",
-                    duration: "45",
-                    price: "100",
-                  },
-                ].map((service, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col gap-4 rounded-lg border border-border bg-secondary/30 p-4 sm:flex-row sm:items-center"
-                  >
-                    <div className="flex-1">
-                      <Label>Service Name</Label>
-                      <Input
-                        defaultValue={service.name}
-                        className="mt-1.5 border-border bg-card"
-                      />
-                    </div>
-                    <div className="w-full sm:w-32">
-                      <Label>Duration (min)</Label>
-                      <Input
-                        type="number"
-                        defaultValue={service.duration}
-                        className="mt-1.5 border-border bg-card"
-                      />
-                    </div>
-                    <div className="w-full sm:w-32">
-                      <Label>Price ($)</Label>
-                      <Input
-                        type="number"
-                        defaultValue={service.price}
-                        className="mt-1.5 border-border bg-card"
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                <Button variant="outline" className="w-full border-border bg-transparent">
-                  Add New Service
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-})
+          */
