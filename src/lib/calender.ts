@@ -61,7 +61,18 @@ export async function getCalenderEntries() {
   }
 }
 
-// TODO: ADD DELETE calander
+export async function deleteCalenderEntry(id: number) {
+  try {
+    const { error } = await client.from("calendar").delete().eq("id", id);
+
+    if (error) throw error;
+
+    return true
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
 
 export interface AvailableSlot {
   date: string;

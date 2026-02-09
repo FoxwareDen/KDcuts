@@ -26,7 +26,8 @@ import {
   CalendarDays,
   Repeat,
 } from "lucide-react";
-import { getSlotGenerationConfig, upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
+import { deleteCalenderEntry, getCalenderEntries, getSlotGenerationConfig, upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
+import type { MetaData } from "@/lib/db";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const fullDayNames = [
@@ -40,34 +41,8 @@ const fullDayNames = [
 ];
 
 // Client-side wrapper to add id
-interface CalendarWithId extends Calendar {
-  id: string;
+interface CalendarWithId extends Calendar, MetaData {
 }
-
-const initialCalendarEntries: CalendarWithId[] = [
-  {
-    id: "1",
-    start_date: "2026-01-01",
-    end_date: "2026-12-31",
-    start_time: "09:00:00",
-    end_time: "17:00:00",
-    days_of_week: [1, 2, 3, 4, 5],
-    frequency: "weekly",
-    buffer_minutes: 15,
-    user_id: "barber-1",
-  },
-  {
-    id: "2",
-    start_date: "2026-01-01",
-    end_date: "2026-12-31",
-    start_time: "10:00:00",
-    end_time: "14:00:00",
-    days_of_week: [6],
-    frequency: "weekly",
-    buffer_minutes: 15,
-    user_id: "barber-1",
-  },
-];
 
 const initialConfig: SlotGenerationConfig = {
   slotDuration: 30,
@@ -318,11 +293,32 @@ function AddEntryDialog({
 }
 
 export function CalendarConfig() {
-  const [entries, setEntries] = useState<CalendarWithId[]>(initialCalendarEntries);
+  const [entriesIsLoading, setEntriesIsLoading] = useState(false);
+  const [entries, setEntries] = useState<CalendarWithId[]>([]);
 
   const [configIsLoading, setConfigIsLoading] = useState(false);
   const [config, setConfig] = useState<SlotGenerationConfig>(initialConfig);
 
+  // Gets calender entries
+  useEffect(() => {
+    (async () => {
+      try {
+        setEntriesIsLoading(true);
+
+        const entires = await getCalenderEntries();
+
+        if (entires) {
+          setEntries(entires);
+        }
+      } catch (error) {
+        console.error(error);
+
+      } finally {
+        setEntriesIsLoading(false);
+      }
+    })()
+  }, [])
+  // Gets config 
   useEffect(() => {
     (async () => {
       try {
@@ -331,7 +327,6 @@ export function CalendarConfig() {
         const result = await getSlotGenerationConfig();
 
         if (result) {
-          console.log(result);
           setConfig(prev => ({
             ...prev,
             bufferMinutes: result.bufferminutes,
@@ -344,11 +339,12 @@ export function CalendarConfig() {
         }
 
       } catch (error) {
-
+        console.error(error);
       } finally {
         setConfigIsLoading(false);
       }
     })()
+
   }, [])
 
   const handleConfigSubmit = async () => {
@@ -382,8 +378,10 @@ export function CalendarConfig() {
     setEntries((prev) => [...prev, newEntry]);
   };
 
-  const handleDeleteEntry = (id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+  const handleDeleteEntry = async (id: string) => {
+    const res = await deleteCalenderEntry(Number(id));
+    if (!res) return;
+    setEntries((prev) => prev.filter((e) => e.id !== Number(id)));
   };
 
   return (
