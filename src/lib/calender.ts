@@ -80,15 +80,40 @@ export interface SlotGenerationConfig {
 }
 
 
-// TODO: Test this
 export async function upsertSlotConfig(config: SlotGenerationConfig) {
   try {
-    const { error } = await client.from("config").upsert({
-      id: 1,
-      ...config
-    });
+    // 1. Try to UPDATE the existing row
+    const { data, error: updateError } = await client
+      .from("config")
+      .update({
+        slotduration: config.slotDuration,
+        bufferminutes: config.bufferMinutes,
+        minadvancedays: config.minAdvanceDays,
+        maxadvancemonths: config.maxAdvanceMonths,
+        businessstarthour: config.businessStartHour,
+        businessendhour: config.businessEndHour,
+      })
+      .eq('id', 1) // Update where id=1
+      .select();
 
-    if (error) throw error;
+    if (updateError) throw updateError;
+
+    // 2. If no row was updated (doesn't exist), INSERT a new one
+    if (!data || data.length === 0) {
+      const { error: insertError } = await client
+        .from('config')
+        .insert({
+          // OMIT id - let the database generate it
+          slotduration: config.slotDuration,
+          bufferminutes: config.bufferMinutes,
+          minadvancedays: config.minAdvanceDays,
+          maxadvancemonths: config.maxAdvanceMonths,
+          businessstarthour: config.businessStartHour,
+          businessendhour: config.businessEndHour,
+        });
+
+      if (insertError) throw insertError;
+    }
 
     return true;
   } catch (error) {

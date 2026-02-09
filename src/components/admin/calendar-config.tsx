@@ -1,12 +1,9 @@
-"use client";
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar as C } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -28,9 +25,8 @@ import {
   Clock,
   CalendarDays,
   Repeat,
-  AlertCircle,
 } from "lucide-react";
-import type { CalendarEntry, SlotGenerationConfig } from "@/lib/types";
+import { upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const fullDayNames = [
@@ -43,8 +39,12 @@ const fullDayNames = [
   "Saturday",
 ];
 
-// Mock initial data
-const initialCalendarEntries: CalendarEntry[] = [
+// Client-side wrapper to add id
+interface CalendarWithId extends Calendar {
+  id: string;
+}
+
+const initialCalendarEntries: CalendarWithId[] = [
   {
     id: "1",
     start_date: "2026-01-01",
@@ -55,7 +55,6 @@ const initialCalendarEntries: CalendarEntry[] = [
     frequency: "weekly",
     buffer_minutes: 15,
     user_id: "barber-1",
-    title: "Weekday Hours",
   },
   {
     id: "2",
@@ -67,20 +66,6 @@ const initialCalendarEntries: CalendarEntry[] = [
     frequency: "weekly",
     buffer_minutes: 15,
     user_id: "barber-1",
-    title: "Saturday Hours",
-  },
-  {
-    id: "3",
-    start_date: "2026-02-14",
-    end_date: "2026-02-14",
-    start_time: "00:00:00",
-    end_time: "23:59:00",
-    days_of_week: [],
-    frequency: "once",
-    buffer_minutes: 0,
-    user_id: "barber-1",
-    is_blocked: true,
-    title: "Valentine's Day - Closed",
   },
 ];
 
@@ -127,7 +112,7 @@ function CalendarEntryCard({
   entry,
   onDelete,
 }: {
-  entry: CalendarEntry;
+  entry: CalendarWithId;
   onDelete: (id: string) => void;
 }) {
   const formatTime = (time: string) => {
@@ -139,7 +124,7 @@ function CalendarEntryCard({
   };
 
   const formatDateRange = () => {
-    if (entry.start_date === entry.end_date) {
+    if (!entry.end_date || entry.start_date === entry.end_date) {
       return new Date(entry.start_date).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -150,21 +135,14 @@ function CalendarEntryCard({
   };
 
   return (
-    <Card
-      className={`border-border ${entry.is_blocked ? "border-l-4 border-l-red-400" : "border-l-4 border-l-primary"}`}
-    >
+    <Card className="border-border border-l-4 border-l-primary">
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h4 className="truncate font-medium text-foreground">
-                {entry.title || "Availability Slot"}
+                Availability Slot
               </h4>
-              {entry.is_blocked && (
-                <Badge variant="destructive" className="shrink-0 text-xs">
-                  Blocked
-                </Badge>
-              )}
             </div>
 
             <div className="mt-2 space-y-1">
@@ -173,14 +151,12 @@ function CalendarEntryCard({
                 <span>{formatDateRange()}</span>
               </div>
 
-              {!entry.is_blocked && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="size-3.5" />
-                  <span>
-                    {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="size-3.5" />
+                <span>
+                  {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
+                </span>
+              </div>
 
               {entry.days_of_week.length > 0 && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -191,7 +167,7 @@ function CalendarEntryCard({
                 </div>
               )}
 
-              {entry.frequency !== "once" && (
+              {entry.frequency && (
                 <Badge variant="secondary" className="mt-2 text-xs capitalize">
                   {entry.frequency}
                 </Badge>
@@ -216,16 +192,13 @@ function CalendarEntryCard({
 function AddEntryDialog({
   onAdd,
 }: {
-  onAdd: (entry: Omit<CalendarEntry, "id" | "user_id">) => void;
+  onAdd: (entry: Omit<Calendar, "user_id">) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(false);
-  const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState("09:00:00");
   const [endTime, setEndTime] = useState("17:00:00");
-  const [frequency, setFrequency] = useState<CalendarEntry["frequency"]>("weekly");
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [bufferMinutes, setBufferMinutes] = useState(15);
 
@@ -236,28 +209,23 @@ function AddEntryDialog({
   };
 
   const handleSubmit = () => {
-    if (!startDate || !endDate) return;
+    if (!startDate) return;
 
     onAdd({
       start_date: startDate.toISOString().split("T")[0],
-      end_date: endDate.toISOString().split("T")[0],
+      end_date: endDate?.toISOString().split("T")[0],
       start_time: startTime,
       end_time: endTime,
-      days_of_week: frequency === "once" ? [] : selectedDays,
-      frequency,
+      days_of_week: selectedDays,
+      frequency: "weekly",
       buffer_minutes: bufferMinutes,
-      is_blocked: isBlocked,
-      title: title || undefined,
     });
 
     setOpen(false);
-    setTitle("");
-    setIsBlocked(false);
     setStartDate(new Date());
     setEndDate(new Date());
     setStartTime("09:00:00");
     setEndTime("17:00:00");
-    setFrequency("weekly");
     setSelectedDays([1, 2, 3, 4, 5]);
   };
 
@@ -275,39 +243,10 @@ function AddEntryDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Entry Type */}
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle
-                className={`size-5 ${isBlocked ? "text-red-500" : "text-muted-foreground"}`}
-              />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Block Time Off
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Mark as unavailable (holiday, vacation, etc.)
-                </p>
-              </div>
-            </div>
-            <Switch checked={isBlocked} onCheckedChange={setIsBlocked} />
-          </div>
-
-          {/* Title */}
-          <div className="space-y-2">
-            <Label>Title (Optional)</Label>
-            <Input
-              placeholder={isBlocked ? "e.g., Holiday" : "e.g., Morning Shift"}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          {/* Date Range */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Start Date</Label>
-              <Calendar
+              <C
                 mode="single"
                 selected={startDate}
                 onSelect={setStartDate}
@@ -316,7 +255,7 @@ function AddEntryDialog({
             </div>
             <div className="space-y-2">
               <Label>End Date</Label>
-              <Calendar
+              <C
                 mode="single"
                 selected={endDate}
                 onSelect={setEndDate}
@@ -325,80 +264,52 @@ function AddEntryDialog({
             </div>
           </div>
 
-          {/* Time Range (only for availability, not blocked time) */}
-          {!isBlocked && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TimeSelect
-                label="Start Time"
-                value={startTime}
-                onChange={setStartTime}
-              />
-              <TimeSelect
-                label="End Time"
-                value={endTime}
-                onChange={setEndTime}
-              />
-            </div>
-          )}
-
-          {/* Frequency */}
-          <div className="space-y-2">
-            <Label>Frequency</Label>
-            <Select
-              value={frequency}
-              onValueChange={(v) => setFrequency(v as CalendarEntry["frequency"])}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="once">One-time</SelectItem>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TimeSelect
+              label="Start Time"
+              value={startTime}
+              onChange={setStartTime}
+            />
+            <TimeSelect
+              label="End Time"
+              value={endTime}
+              onChange={setEndTime}
+            />
           </div>
 
-          {/* Days of Week (for recurring entries) */}
-          {frequency !== "once" && (
-            <div className="space-y-2">
-              <Label>Days of Week</Label>
-              <div className="flex flex-wrap gap-2">
-                {fullDayNames.map((day, index) => (
-                  <Button
-                    key={day}
-                    type="button"
-                    variant={selectedDays.includes(index) ? "default" : "outline"}
-                    size="sm"
-                    className={
-                      selectedDays.includes(index) ? "" : "bg-transparent"
-                    }
-                    onClick={() => toggleDay(index)}
-                  >
-                    {dayNames[index]}
-                  </Button>
-                ))}
-              </div>
+          <div className="space-y-2">
+            <Label>Days of Week</Label>
+            <div className="flex flex-wrap gap-2">
+              {fullDayNames.map((day, index) => (
+                <Button
+                  key={day}
+                  type="button"
+                  variant={selectedDays.includes(index) ? "default" : "outline"}
+                  size="sm"
+                  className={
+                    selectedDays.includes(index) ? "" : "bg-transparent"
+                  }
+                  onClick={() => toggleDay(index)}
+                >
+                  {dayNames[index]}
+                </Button>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* Buffer (only for availability) */}
-          {!isBlocked && (
-            <div className="space-y-2">
-              <Label>Buffer Between Slots (minutes)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={60}
-                value={bufferMinutes}
-                onChange={(e) => setBufferMinutes(parseInt(e.target.value) || 0)}
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label>Buffer Between Slots (minutes)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={60}
+              value={bufferMinutes}
+              onChange={(e) => setBufferMinutes(parseInt(e.target.value) || 0)}
+            />
+          </div>
 
           <Button className="w-full" onClick={handleSubmit}>
-            {isBlocked ? "Block Time" : "Add Availability"}
+            Add Availability
           </Button>
         </div>
       </DialogContent>
@@ -407,11 +318,35 @@ function AddEntryDialog({
 }
 
 export function CalendarConfig() {
-  const [entries, setEntries] = useState<CalendarEntry[]>(initialCalendarEntries);
+  const [entries, setEntries] = useState<CalendarWithId[]>(initialCalendarEntries);
+
+  const [configIsLoading, setConfigIsLoading] = useState(false);
   const [config, setConfig] = useState<SlotGenerationConfig>(initialConfig);
 
-  const handleAddEntry = (entry: Omit<CalendarEntry, "id" | "user_id">) => {
-    const newEntry: CalendarEntry = {
+  const handleConfigSubmit = async () => {
+    if (configIsLoading) return;
+    try {
+      setConfigIsLoading(true);
+
+      const res = await upsertSlotConfig(config);
+
+      if (res) {
+        console.log("Success");
+      } else {
+        setConfig(initialConfig);
+        throw new Error("Failed to update config");
+      }
+
+    } catch (error) {
+      console.error(error);
+      // TODO: add better error handling
+    } finally {
+      setConfigIsLoading(false);
+    }
+  }
+
+  const handleAddEntry = (entry: Omit<Calendar, "user_id">) => {
+    const newEntry: CalendarWithId = {
       ...entry,
       id: Date.now().toString(),
       user_id: "barber-1",
@@ -423,12 +358,8 @@ export function CalendarConfig() {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
-  const availabilityEntries = entries.filter((e) => !e.is_blocked);
-  const blockedEntries = entries.filter((e) => e.is_blocked);
-
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      {/* Slot Configuration */}
       <Card className="border-border lg:col-span-1">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">
@@ -451,6 +382,7 @@ export function CalendarConfig() {
                 <SelectItem value="15">15 minutes</SelectItem>
                 <SelectItem value="20">20 minutes</SelectItem>
                 <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="40">40 minutes</SelectItem>
                 <SelectItem value="45">45 minutes</SelectItem>
                 <SelectItem value="60">60 minutes</SelectItem>
               </SelectContent>
@@ -554,35 +486,32 @@ export function CalendarConfig() {
             </div>
           </div>
 
-          <Button className="w-full">Save Configuration</Button>
+          <Button onClick={handleConfigSubmit} disabled={configIsLoading} className="w-full">Save Configuration</Button>
         </CardContent>
       </Card>
 
-      {/* Calendar Entries */}
       <div className="space-y-6 lg:col-span-2">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
               Calendar Entries
             </h2>
             <p className="text-sm text-muted-foreground">
-              Manage your availability and blocked times
+              Manage your availability
             </p>
           </div>
           <AddEntryDialog onAdd={handleAddEntry} />
         </div>
 
-        {/* Availability Entries */}
         <div className="space-y-4">
           <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
             <div className="size-2 rounded-full bg-primary" />
             Available Times
             <Badge variant="secondary" className="ml-1">
-              {availabilityEntries.length}
+              {entries.length}
             </Badge>
           </h3>
-          {availabilityEntries.length === 0 ? (
+          {entries.length === 0 ? (
             <Card className="border-border border-dashed">
               <CardContent className="py-8 text-center">
                 <p className="text-sm text-muted-foreground">
@@ -592,37 +521,7 @@ export function CalendarConfig() {
             </Card>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              {availabilityEntries.map((entry) => (
-                <CalendarEntryCard
-                  key={entry.id}
-                  entry={entry}
-                  onDelete={handleDeleteEntry}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Blocked Times */}
-        <div className="space-y-4">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <div className="size-2 rounded-full bg-red-400" />
-            Blocked Times
-            <Badge variant="secondary" className="ml-1">
-              {blockedEntries.length}
-            </Badge>
-          </h3>
-          {blockedEntries.length === 0 ? (
-            <Card className="border-border border-dashed">
-              <CardContent className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No blocked times. Use this for holidays or vacation days.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {blockedEntries.map((entry) => (
+              {entries.map((entry) => (
                 <CalendarEntryCard
                   key={entry.id}
                   entry={entry}
@@ -636,3 +535,4 @@ export function CalendarConfig() {
     </div>
   );
 }
+
