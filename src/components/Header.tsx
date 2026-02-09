@@ -3,6 +3,7 @@ import { Scissors, Phone, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { getUserSession, signOut } from "@/lib/db";
+import { useLocation } from "@tanstack/react-router";
 
 export function Header() {
   const [isAuth, setIsAuth] = useState(false);
@@ -35,9 +36,14 @@ export function Header() {
     window.location.href = window.location.origin
   };
 
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith("/dashboard");
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+      <div className={`mx-auto flex h-16 items-center justify-between px-4 ${
+        isDashboard ? "max-w-full" : "max-w-6xl"
+      }`}>
         <div className="flex items-center gap-2">
           <div className="flex size-10 items-center justify-center rounded-full bg-primary">
             <Scissors className="size-5 text-primary-foreground" />
