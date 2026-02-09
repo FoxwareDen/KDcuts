@@ -120,8 +120,6 @@ const initialBookings: Booking[] = [
 
 const columns: { id: BookingStatus; title: string; color: string }[] = [
   { id: "pending", title: "Pending", color: "bg-amber-500" },
-  { id: "confirmed", title: "Confirmed", color: "bg-blue-500" },
-  { id: "in-progress", title: "In Progress", color: "bg-primary" },
   { id: "completed", title: "Completed", color: "bg-emerald-500" },
   { id: "cancelled", title: "Cancelled", color: "bg-red-400" },
 ];

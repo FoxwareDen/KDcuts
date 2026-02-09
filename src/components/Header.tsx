@@ -75,14 +75,14 @@ export function Header() {
             isAuth ? (
               <button
                 onClick={handleLogOut}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
               >
                 Logout
               </button>
             ) : (
               <Link
                 to="/login"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
               >
                 Login
               </Link>
@@ -117,6 +117,8 @@ export function Header() {
         <div className="sm:hidden border-t border-border bg-background">
           <nav className="flex flex-col px-4 py-4 space-y-4">
             {isAdmin && (
+              <>
+             
               <Link
                 to="/dashboard"
                 onClick={handleLinkClick}
@@ -124,6 +126,14 @@ export function Header() {
               >
                 Dashboard
               </Link>
+              <Link
+                to="/dashboard/settings"
+                onClick={handleLinkClick}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Settings
+                </Link>
+               </>
             )}
             <Link
               to="/#services"
