@@ -82,24 +82,11 @@ export interface SlotGenerationConfig {
 
 export async function upsertSlotConfig(config: SlotGenerationConfig) {
   try {
-    // 1. Try to UPDATE the existing row
-    const { data, error: updateError } = await client
-      .from("config")
-      .update({
-        slotduration: config.slotDuration,
-        bufferminutes: config.bufferMinutes,
-        minadvancedays: config.minAdvanceDays,
-        maxadvancemonths: config.maxAdvanceMonths,
-        businessstarthour: config.businessStartHour,
-        businessendhour: config.businessEndHour,
-      })
-      .eq('id', 1) // Update where id=1
-      .select();
+    const { data: exists, error } = await client.from("config").select("*");
 
-    if (updateError) throw updateError;
+    if (error) throw error;
 
-    // 2. If no row was updated (doesn't exist), INSERT a new one
-    if (!data || data.length === 0) {
+    if (!exists || exists.length === 0) {
       const { error: insertError } = await client
         .from('config')
         .insert({
@@ -115,6 +102,25 @@ export async function upsertSlotConfig(config: SlotGenerationConfig) {
       if (insertError) throw insertError;
     }
 
+    console.log(exists);
+
+
+    const { error: updateError } = await client
+      .from("config")
+      .update({
+        slotduration: config.slotDuration,
+        bufferminutes: config.bufferMinutes,
+        minadvancedays: config.minAdvanceDays,
+        maxadvancemonths: config.maxAdvanceMonths,
+        businessstarthour: config.businessStartHour,
+        businessendhour: config.businessEndHour,
+      })
+      .eq("id", exists[0].id)
+      .select();
+
+    if (updateError) throw updateError;
+
+
     return true;
   } catch (error) {
     console.error(error);
@@ -122,7 +128,16 @@ export async function upsertSlotConfig(config: SlotGenerationConfig) {
   }
 }
 
-export async function getSlotGenerationConfig(): Promise<SlotGenerationConfig | null> {
+export async function getSlotGenerationConfig(): Promise<
+  {
+    slotduration: number; // in minutes
+    bufferminutes: number; // buffer between slots (default: 15)
+    minadvancedays: number; // minimum days in advance (default: 2)
+    maxadvancemonths: number; // maximum months in advance (default: 2)
+    businessstarthour?: number; // business hours start (0-23)
+    businessendhour?: number; // business hours end (0-23)
+  }
+  | null> {
   try {
     const { data } = await client.from("config").select("*").single();
 

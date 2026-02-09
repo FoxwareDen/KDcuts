@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ import {
   CalendarDays,
   Repeat,
 } from "lucide-react";
-import { upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
+import { getSlotGenerationConfig, upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const fullDayNames = [
@@ -322,6 +322,34 @@ export function CalendarConfig() {
 
   const [configIsLoading, setConfigIsLoading] = useState(false);
   const [config, setConfig] = useState<SlotGenerationConfig>(initialConfig);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setConfigIsLoading(true);
+
+        const result = await getSlotGenerationConfig();
+
+        if (result) {
+          console.log(result);
+          setConfig(prev => ({
+            ...prev,
+            bufferMinutes: result.bufferminutes,
+            businessEndHour: result.businessendhour,
+            businessStartHour: result.businessstarthour,
+            maxAdvanceMonths: result.maxadvancemonths,
+            minAdvanceDays: result.minadvancedays,
+            slotDuration: result.slotduration
+          }));
+        }
+
+      } catch (error) {
+
+      } finally {
+        setConfigIsLoading(false);
+      }
+    })()
+  }, [])
 
   const handleConfigSubmit = async () => {
     if (configIsLoading) return;
