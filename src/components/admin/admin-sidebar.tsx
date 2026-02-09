@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Calendar,
-  Clock,
+  // Calendar,
+  // Clock,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -19,16 +19,16 @@ const navItems = [
     href: "/dashboard",
     icon: LayoutDashboard,
   },
-  {
-    label: "Availability",
-    href: "/dashboard/availability",
-    icon: Clock,
-  },
-  {
-    label: "Appointments",
-    href: "/dashboard/appointments",
-    icon: Calendar,
-  },
+  // {
+  //   label: "Availability",
+  //   href: "/dashboard/availability",
+  //   icon: Clock,
+  // },
+  // {
+  //   label: "Appointments",
+  //   href: "/dashboard/appointments",
+  //   icon: Calendar,
+  // },
   {
     label: "Settings",
     href: "/dashboard/settings",
