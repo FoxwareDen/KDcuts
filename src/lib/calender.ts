@@ -1,6 +1,6 @@
 import { addDays, parseISO, format, parse, addMonths, startOfDay, isAfter, isBefore, differenceInDays } from 'date-fns';
 import type { Booking } from './booking';
-import { client } from './db';
+import { client, type MetaData } from './db';
 import { convertCalendarToEntry, type CalendarEntry } from './utils';
 
 export interface Calendar {
@@ -40,10 +40,31 @@ export async function addCalenderEntries(calendars: Calendar[]) {
 
     const { error } = await client.from("calendar").insert(calendarEntries);
 
-
     if (error) throw error;
 
     return calendars
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function addCalendarEntry(calendar: Calendar): Promise<CalendarEntry & MetaData | null> {
+  try {
+
+    const { data, error } = await client.from("calendar").insert({
+      start_date: calendar.start_date,
+      end_date: calendar.end_date,
+      start_time: calendar.start_time,
+      end_time: calendar.end_time,
+      days_of_week: calendar.days_of_week,
+      frequency: calendar.frequency,
+      buffer_minutes: calendar.buffer_minutes
+    }).select("*").single();
+
+    if (error) throw error;
+
+    return data
   } catch (error) {
     console.error(error);
     return null;
@@ -152,7 +173,7 @@ export async function getSlotGenerationConfig(): Promise<
   try {
     const { data } = await client.from("config").select("*").single();
 
-    return data as SlotGenerationConfig;
+    return data;
   } catch (error) {
     console.error(error);
     return null;

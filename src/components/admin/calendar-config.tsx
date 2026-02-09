@@ -15,6 +15,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -25,9 +26,10 @@ import {
   Clock,
   CalendarDays,
   Repeat,
+  Loader2,
 } from "lucide-react";
-import { deleteCalenderEntry, getCalenderEntries, getSlotGenerationConfig, upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
-import type { MetaData } from "@/lib/db";
+import { addCalendarEntry, deleteCalenderEntry, getCalenderEntries, getSlotGenerationConfig, upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
+import { getUserSession, type MetaData } from "@/lib/db";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const fullDayNames = [
@@ -177,35 +179,115 @@ function AddEntryDialog({
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [bufferMinutes, setBufferMinutes] = useState(15);
 
+  // Add state for validation and feedback
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   const toggleDay = (day: number) => {
     setSelectedDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
     );
   };
 
-  const handleSubmit = () => {
-    if (!startDate) return;
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
-    onAdd({
-      start_date: startDate.toISOString().split("T")[0],
-      end_date: endDate?.toISOString().split("T")[0],
-      start_time: startTime,
-      end_time: endTime,
-      days_of_week: selectedDays,
-      frequency: "weekly",
-      buffer_minutes: bufferMinutes,
-    });
+    if (!startDate) {
+      newErrors.startDate = "Start date is required";
+    }
 
-    setOpen(false);
+    if (endDate && startDate && endDate < startDate) {
+      newErrors.endDate = "End date cannot be before start date";
+    }
+
+    // Validate times
+    if (startTime && endTime) {
+      const start = new Date(`1970-01-01T${startTime}`);
+      const end = new Date(`1970-01-01T${endTime}`);
+      if (start >= end) {
+        newErrors.time = "End time must be after start time";
+      }
+    }
+
+    if (selectedDays.length === 0) {
+      newErrors.days = "At least one day must be selected";
+    }
+
+    if (bufferMinutes < 0 || bufferMinutes > 240) {
+      newErrors.buffer = "Buffer must be between 0 and 240 minutes";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    // Reset states
+    setErrors({});
+    setSubmitSuccess(false);
+
+    // Validate form
+    if (!validateForm()) {
+      return; // Don't proceed if validation fails
+    }
+
+    if (!startDate) {
+      setErrors({ startDate: "Start date is required" });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Call the onAdd function
+      await Promise.resolve(onAdd({
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate?.toISOString().split("T")[0],
+        start_time: startTime,
+        end_time: endTime,
+        days_of_week: selectedDays,
+        frequency: "weekly",
+        buffer_minutes: bufferMinutes,
+      }));
+
+      // Show success feedback
+      setSubmitSuccess(true);
+
+      // Reset form after successful submission
+      setTimeout(() => {
+        setOpen(false);
+        resetForm();
+      }, 1500);
+
+    } catch (error) {
+      // Handle API/network errors
+      setErrors({
+        submit: error instanceof Error
+          ? error.message
+          : "Failed to add calendar entry. Please try again."
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
     setStartDate(new Date());
     setEndDate(new Date());
     setStartTime("09:00:00");
     setEndTime("17:00:00");
     setSelectedDays([1, 2, 3, 4, 5]);
+    setBufferMinutes(15);
+    setErrors({});
+    setSubmitSuccess(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) resetForm();
+    }}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="size-4" />
@@ -215,42 +297,80 @@ function AddEntryDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add Calendar Entry</DialogTitle>
+          <DialogDescription>
+            Configure your availability schedule
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Success Message */}
+          {submitSuccess && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-700 text-sm font-medium">
+                ✓ Calendar entry added successfully!
+              </p>
+            </div>
+          )}
+
+          {/* General Error Message */}
+          {errors.submit && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-700 text-sm font-medium">
+                {errors.submit}
+              </p>
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Start Date</Label>
+              <Label htmlFor="start-date">Start Date</Label>
               <C
                 mode="single"
                 selected={startDate}
                 onSelect={setStartDate}
                 className="rounded-lg border border-border"
+                disabled={isSubmitting}
               />
+              {errors.startDate && (
+                <p className="text-sm text-red-500 mt-1">{errors.startDate}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label>End Date</Label>
+              <Label htmlFor="end-date">End Date</Label>
               <C
                 mode="single"
                 selected={endDate}
                 onSelect={setEndDate}
                 className="rounded-lg border border-border"
+                disabled={isSubmitting}
               />
+              {errors.endDate && (
+                <p className="text-sm text-red-500 mt-1">{errors.endDate}</p>
+              )}
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <TimeSelect
-              label="Start Time"
-              value={startTime}
-              onChange={setStartTime}
-            />
-            <TimeSelect
-              label="End Time"
-              value={endTime}
-              onChange={setEndTime}
-            />
+            <div className="space-y-2">
+              <TimeSelect
+                label="Start Time"
+                value={startTime}
+                onChange={setStartTime}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="space-y-2">
+              <TimeSelect
+                label="End Time"
+                value={endTime}
+                onChange={setEndTime}
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
+          {errors.time && (
+            <p className="text-sm text-red-500">{errors.time}</p>
+          )}
 
           <div className="space-y-2">
             <Label>Days of Week</Label>
@@ -264,28 +384,62 @@ function AddEntryDialog({
                   className={
                     selectedDays.includes(index) ? "" : "bg-transparent"
                   }
-                  onClick={() => toggleDay(index)}
+                  onClick={() => !isSubmitting && toggleDay(index)}
+                  disabled={isSubmitting}
                 >
                   {dayNames[index]}
                 </Button>
               ))}
             </div>
+            {errors.days && (
+              <p className="text-sm text-red-500 mt-1">{errors.days}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label>Buffer Between Slots (minutes)</Label>
+            <Label htmlFor="buffer-minutes">Buffer Between Slots (minutes)</Label>
             <Input
+              id="buffer-minutes"
               type="number"
               min={0}
-              max={60}
+              max={240}
               value={bufferMinutes}
               onChange={(e) => setBufferMinutes(parseInt(e.target.value) || 0)}
+              disabled={isSubmitting}
             />
+            <p className="text-xs text-gray-500">
+              Maximum 240 minutes (4 hours)
+            </p>
+            {errors.buffer && (
+              <p className="text-sm text-red-500 mt-1">{errors.buffer}</p>
+            )}
           </div>
 
-          <Button className="w-full" onClick={handleSubmit}>
-            Add Availability
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="flex-1"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Availability'
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -369,13 +523,18 @@ export function CalendarConfig() {
     }
   }
 
-  const handleAddEntry = (entry: Omit<Calendar, "user_id">) => {
-    const newEntry: CalendarWithId = {
+  const handleAddEntry = async (entry: Omit<Calendar, "user_id">) => {
+    const data = await getUserSession();
+
+    if (!data) return;
+
+    const res = await addCalendarEntry({
       ...entry,
-      id: Date.now().toString(),
-      user_id: "barber-1",
-    };
-    setEntries((prev) => [...prev, newEntry]);
+      user_id: data.user.id
+    })
+
+    console.log(res);
+    // setEntries((prev) => [...prev, newEntry]);
   };
 
   const handleDeleteEntry = async (id: string) => {
