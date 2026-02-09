@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +15,13 @@ import { addDays, addMonths, format, parseISO } from "date-fns";
 import { addBooking, getBookings, type Booking } from "@/lib/booking";
 import TimeSlotSelector from "./TimeSlotSelector";
 import useFetch from "@/hooks/useFetch";
-import { getUserSession } from "@/lib/db";
+import { getUserSession, } from "@/lib/db";
+import { getServices, type ServiceResponse } from "@/lib/settings";
 
-const services = [
-  { id: "classic-cut", name: "Classic Haircut", price: 100, duration: 40 },
-  { id: "beard-trim", name: "Beard Trim & Shape", price: 100, duration: 40 },
-  { id: "full-service", name: "The Full Experience", price: 100, duration: 40 },
+const initialServices: ServiceResponse[] = [
+  { id: 1, service: "Classic Haircut", price: 100, created_at: "2026-02-02T10:00:00Z" },
+  { id: 2, service: "Beard Trim & Shape", price: 100, created_at: "2026-02-02T10:00:00Z" },
+  { id: 3, service: "The Full Experience", price: 100, created_at: "2026-02-02T10:00:00Z" },
 ];
 
 
@@ -39,17 +40,17 @@ const fetchAndGenerateAvalibleSlots = async () => {
 
 
   const today = new Date();
-  const startDate = format(addDays(today, Number(slotGenerationConfig.minAdvanceDays || 2)), 'yyyy-MM-dd');
-  const endDate = format(addMonths(today, Number(slotGenerationConfig.maxAdvanceMonths || 1)), 'yyyy-MM-dd');
+  const startDate = format(addDays(today, Number(slotGenerationConfig.minadvancedays || 2)), 'yyyy-MM-dd');
+  const endDate = format(addMonths(today, Number(slotGenerationConfig.maxadvancemonths || 1)), 'yyyy-MM-dd');
 
   // Generate available slots with constraints
   const config: SlotGenerationConfig = {
-    slotDuration: slotGenerationConfig.slotDuration || 40,
-    bufferMinutes: slotGenerationConfig.bufferMinutes || 15, // 15-minute buffer
-    minAdvanceDays: slotGenerationConfig.minAdvanceDays || 2, // Book at least 2 days in advance
-    maxAdvanceMonths: slotGenerationConfig.maxAdvanceMonths || 2, // Book up to 2 months in advance
-    businessStartHour: slotGenerationConfig.businessStartHour || 8,
-    businessEndHour: slotGenerationConfig.businessEndHour || 18
+    slotDuration: slotGenerationConfig.slotduration || 40,
+    bufferMinutes: slotGenerationConfig.bufferminutes || 15, // 15-minute buffer
+    minAdvanceDays: slotGenerationConfig.minadvancedays || 2, // Book at least 2 days in advance
+    maxAdvanceMonths: slotGenerationConfig.maxadvancemonths || 2, // Book up to 2 months in advance
+    businessStartHour: slotGenerationConfig.businessstarthour || 8,
+    businessEndHour: slotGenerationConfig.businessendhour || 18
   };
 
   const availableSlots = generateAvailableSlots(
@@ -87,6 +88,7 @@ export function BookingSection() {
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const { data: availableSlots, loading: isLoadingSlots, error: slotsError } = useFetch<AvailableSlot[]>(fetchAndGenerateAvalibleSlots);
 
+  const [services, setServices] = useState<ServiceResponse[]>([]);
   const [selectedService, setSelectedService] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
@@ -94,7 +96,20 @@ export function BookingSection() {
     phone: "",
   });
 
-  const selectedServiceData = services.find((s) => s.id === selectedService);
+  useEffect(() => {
+    getServices().then(services => {
+      if (services) {
+        setServices(services);
+      } else {
+        setServices(initialServices);
+      }
+    }).catch((err) => {
+      console.error(err);
+      setServices(initialServices);
+    });
+  }, [])
+
+  const selectedServiceData = services.find((s) => s.service === selectedService);
 
   // TODO: check of time slot selected
   const canSubmit = selectedSlot && selectedServiceData;
@@ -116,7 +131,7 @@ export function BookingSection() {
           email: formData.email,
           name: formData.name,
           phone: formData.phone,
-          service: selectedServiceData?.name
+          service: selectedServiceData?.service
         })
         if (res) {
           setIsSuccess(true);
@@ -186,11 +201,11 @@ export function BookingSection() {
                   </SelectTrigger>
                   <SelectContent>
                     {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
+                      <SelectItem key={service.id} value={service.service}>
                         <span className="flex items-center justify-between gap-4">
-                          <span>{service.name}</span>
+                          <span>{service.service}</span>
                           <span className="text-muted-foreground">
-                            ${service.price} • {service.duration}min
+                            ${service.price}
                           </span>
                         </span>
                       </SelectItem>

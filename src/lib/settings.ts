@@ -5,14 +5,15 @@ export interface Service {
   service: string,
   price: number
 }
+export type ServiceResponse = {} & Service & MetaData;
 
-export async function getServices(): Promise<Service & MetaData[] | null> {
+export async function getServices(): Promise<ServiceResponse[] | null> {
   try {
     const { data, error } = await client.from("services").select("*");
 
     if (error) throw error;
 
-    return data as Service & MetaData[];
+    return data as ServiceResponse[];
   } catch (error) {
     console.error(error);
     return null;
