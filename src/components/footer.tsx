@@ -1,6 +1,14 @@
 import { Scissors, MapPin, Phone, Clock, Instagram, Facebook } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
 
 export function Footer() {
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/dashboard');
+
+  //footer not visible on dashboard
+  if (isDashboard) return null;
+  
+
   return (
     <footer className="border-t border-border bg-background py-12">
       <div className="mx-auto max-w-6xl px-4">
