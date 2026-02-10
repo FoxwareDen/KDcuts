@@ -3,6 +3,7 @@ import { client, type MetaData } from "./db";
 
 export interface Service {
   service: string,
+  description: string,
   price: number
 }
 export type ServiceResponse = {} & Service & MetaData;
@@ -20,9 +21,9 @@ export async function getServices(): Promise<ServiceResponse[] | null> {
   }
 }
 
-export async function addService(service: string, price: number): Promise<boolean> {
+export async function addService(service: string, description: string, price: number): Promise<boolean> {
   try {
-    const { error } = await client.from("services").insert({ service, price })
+    const { error } = await client.from("services").insert({ service, price, description });
 
     if (error) throw error;
 
