@@ -19,9 +19,9 @@ import { getUserSession, } from "@/lib/db";
 import { getServices, type ServiceResponse } from "@/lib/settings";
 
 const initialServices: ServiceResponse[] = [
-  { id: 1, service: "Classic Haircut", price: 100, created_at: "2026-02-02T10:00:00Z" },
-  { id: 2, service: "Beard Trim & Shape", price: 100, created_at: "2026-02-02T10:00:00Z" },
-  { id: 3, service: "The Full Experience", price: 100, created_at: "2026-02-02T10:00:00Z" },
+  { id: 1, service: "Classic Haircut", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
+  { id: 2, service: "Beard Trim & Shape", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
+  { id: 3, service: "The Full Experience", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
 ];
 
 
@@ -71,7 +71,7 @@ const fetchAndGenerateAvalibleSlots = async () => {
     config
   );
 
-  console.log(availableSlots);
+  console.log(validation);
 
   return availableSlots
 };
@@ -81,12 +81,12 @@ const fetchAndGenerateAvalibleSlots = async () => {
 export function BookingSection() {
   // page state
   // TODO: tied page state to loading of slots and handle submition  
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   // 
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
-  const { data: availableSlots, loading: isLoadingSlots, error: slotsError } = useFetch<AvailableSlot[]>(fetchAndGenerateAvalibleSlots);
+  const { data: availableSlots, loading: _isLoadingSlots, error: _slotsError } = useFetch<AvailableSlot[]>(fetchAndGenerateAvalibleSlots);
 
   const [services, setServices] = useState<ServiceResponse[]>([]);
   const [selectedService, setSelectedService] = useState<string>("");
@@ -343,7 +343,7 @@ export function BookingSection() {
                 <Clock className="w-5 h-5 text-green-700 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-green-900">Service</p>
-                  <p className="text-sm text-green-800">{selectedServiceData.name}</p>
+                  <p className="text-sm text-green-800">{selectedServiceData.service}</p>
                   <p className="text-sm text-green-800">{selectedSlot.duration} minutes</p>
                 </div>
               </div>

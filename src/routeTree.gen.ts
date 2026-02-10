@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestRouteImport } from './routes/test'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as SplatRouteImport } from './routes/$'
@@ -20,11 +19,6 @@ import { Route as AuthDashboardSettingsRouteImport } from './routes/_auth/dashbo
 import { Route as AuthDashboardAvailabilityRouteImport } from './routes/_auth/dashboard.availability'
 import { Route as AuthDashboardAppointmentsRouteImport } from './routes/_auth/dashboard.appointments'
 
-const TestRoute = TestRouteImport.update({
-  id: '/test',
-  path: '/test',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -76,7 +70,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
-  '/test': typeof TestRoute
   '/dashboard': typeof AuthDashboardRouteWithChildren
   '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
   '/dashboard/availability': typeof AuthDashboardAvailabilityRoute
@@ -87,7 +80,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
-  '/test': typeof TestRoute
   '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
   '/dashboard/availability': typeof AuthDashboardAvailabilityRoute
   '/dashboard/settings': typeof AuthDashboardSettingsRoute
@@ -99,7 +91,6 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
-  '/test': typeof TestRoute
   '/_auth/dashboard': typeof AuthDashboardRouteWithChildren
   '/_auth/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
   '/_auth/dashboard/availability': typeof AuthDashboardAvailabilityRoute
@@ -112,7 +103,6 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
-    | '/test'
     | '/dashboard'
     | '/dashboard/appointments'
     | '/dashboard/availability'
@@ -123,7 +113,6 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
-    | '/test'
     | '/dashboard/appointments'
     | '/dashboard/availability'
     | '/dashboard/settings'
@@ -134,7 +123,6 @@ export interface FileRouteTypes {
     | '/$'
     | '/_auth'
     | '/login'
-    | '/test'
     | '/_auth/dashboard'
     | '/_auth/dashboard/appointments'
     | '/_auth/dashboard/availability'
@@ -147,18 +135,10 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   AuthRoute: typeof AuthRouteWithChildren
   LoginRoute: typeof LoginRoute
-  TestRoute: typeof TestRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/test': {
-      id: '/test'
-      path: '/test'
-      fullPath: '/test'
-      preLoaderRoute: typeof TestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -258,7 +238,6 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   AuthRoute: AuthRouteWithChildren,
   LoginRoute: LoginRoute,
-  TestRoute: TestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

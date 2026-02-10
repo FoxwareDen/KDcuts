@@ -156,7 +156,7 @@ function CalendarEntryCard({
             variant="ghost"
             size="sm"
             className="size-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(entry.id)}
+            onClick={() => onDelete(entry.id.toString())}
           >
             <Trash2 className="size-4" />
           </Button>
@@ -356,7 +356,6 @@ function AddEntryDialog({
                 label="Start Time"
                 value={startTime}
                 onChange={setStartTime}
-                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -364,7 +363,6 @@ function AddEntryDialog({
                 label="End Time"
                 value={endTime}
                 onChange={setEndTime}
-                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -447,7 +445,7 @@ function AddEntryDialog({
 }
 
 export function CalendarConfig() {
-  const [entriesIsLoading, setEntriesIsLoading] = useState(false);
+  const [_entriesIsLoading, setEntriesIsLoading] = useState(false);
   const [entries, setEntries] = useState<CalendarWithId[]>([]);
 
   const [configIsLoading, setConfigIsLoading] = useState(false);

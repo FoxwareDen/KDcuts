@@ -1,6 +1,6 @@
 import type { Calendar, SlotGenerationConfig, AvailableSlot } from "../../lib/calender";
 import type { Booking } from "../../lib/booking";
-import { addDays, addMonths, differenceInDays, format, isAfter, isBefore, parse, parseISO, startOfDay } from "date-fns";
+import { addDays, addMonths, differenceInDays, format, isAfter, isBefore, parseISO, startOfDay } from "date-fns";
 
 /**
  * Main function to generate available time slots based on calendars and existing bookings
