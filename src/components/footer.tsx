@@ -1,4 +1,4 @@
-import { Scissors, MapPin, Phone, Clock, Instagram, Facebook } from "lucide-react";
+import { Scissors, MapPin, Phone, Clock, Instagram, Facebook} from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
 
 export function Footer() {
@@ -76,9 +76,9 @@ export function Footer() {
 
             <div className="mt-4 flex gap-4">
               <a
-                href="#"
+                href="https://www.tiktok.com/@kayden_carelse_?_r=1&_t=ZS-93dRwLs4u2P"
                 className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-                aria-label="Instagram"
+                aria-label="Tiktok"
               >
                 <Instagram className="size-4" />
               </a>
