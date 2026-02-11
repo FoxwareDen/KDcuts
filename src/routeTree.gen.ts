@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
 import { Route as AuthDashboardIndexRouteImport } from './routes/_auth/dashboard.index'
 import { Route as AuthDashboardSettingsRouteImport } from './routes/_auth/dashboard.settings'
+import { Route as AuthDashboardMetricsRouteImport } from './routes/_auth/dashboard.metrics'
 import { Route as AuthDashboardAvailabilityRouteImport } from './routes/_auth/dashboard.availability'
 import { Route as AuthDashboardAppointmentsRouteImport } from './routes/_auth/dashboard.appointments'
 
@@ -53,6 +54,11 @@ const AuthDashboardSettingsRoute = AuthDashboardSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthDashboardRoute,
 } as any)
+const AuthDashboardMetricsRoute = AuthDashboardMetricsRouteImport.update({
+  id: '/metrics',
+  path: '/metrics',
+  getParentRoute: () => AuthDashboardRoute,
+} as any)
 const AuthDashboardAvailabilityRoute =
   AuthDashboardAvailabilityRouteImport.update({
     id: '/availability',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthDashboardRouteWithChildren
   '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
   '/dashboard/availability': typeof AuthDashboardAvailabilityRoute
+  '/dashboard/metrics': typeof AuthDashboardMetricsRoute
   '/dashboard/settings': typeof AuthDashboardSettingsRoute
   '/dashboard/': typeof AuthDashboardIndexRoute
 }
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
   '/dashboard/availability': typeof AuthDashboardAvailabilityRoute
+  '/dashboard/metrics': typeof AuthDashboardMetricsRoute
   '/dashboard/settings': typeof AuthDashboardSettingsRoute
   '/dashboard': typeof AuthDashboardIndexRoute
 }
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_auth/dashboard': typeof AuthDashboardRouteWithChildren
   '/_auth/dashboard/appointments': typeof AuthDashboardAppointmentsRoute
   '/_auth/dashboard/availability': typeof AuthDashboardAvailabilityRoute
+  '/_auth/dashboard/metrics': typeof AuthDashboardMetricsRoute
   '/_auth/dashboard/settings': typeof AuthDashboardSettingsRoute
   '/_auth/dashboard/': typeof AuthDashboardIndexRoute
 }
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/appointments'
     | '/dashboard/availability'
+    | '/dashboard/metrics'
     | '/dashboard/settings'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard/appointments'
     | '/dashboard/availability'
+    | '/dashboard/metrics'
     | '/dashboard/settings'
     | '/dashboard'
   id:
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/_auth/dashboard'
     | '/_auth/dashboard/appointments'
     | '/_auth/dashboard/availability'
+    | '/_auth/dashboard/metrics'
     | '/_auth/dashboard/settings'
     | '/_auth/dashboard/'
   fileRoutesById: FileRoutesById
@@ -188,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthDashboardSettingsRouteImport
       parentRoute: typeof AuthDashboardRoute
     }
+    '/_auth/dashboard/metrics': {
+      id: '/_auth/dashboard/metrics'
+      path: '/metrics'
+      fullPath: '/dashboard/metrics'
+      preLoaderRoute: typeof AuthDashboardMetricsRouteImport
+      parentRoute: typeof AuthDashboardRoute
+    }
     '/_auth/dashboard/availability': {
       id: '/_auth/dashboard/availability'
       path: '/availability'
@@ -208,6 +227,7 @@ declare module '@tanstack/react-router' {
 interface AuthDashboardRouteChildren {
   AuthDashboardAppointmentsRoute: typeof AuthDashboardAppointmentsRoute
   AuthDashboardAvailabilityRoute: typeof AuthDashboardAvailabilityRoute
+  AuthDashboardMetricsRoute: typeof AuthDashboardMetricsRoute
   AuthDashboardSettingsRoute: typeof AuthDashboardSettingsRoute
   AuthDashboardIndexRoute: typeof AuthDashboardIndexRoute
 }
@@ -215,6 +235,7 @@ interface AuthDashboardRouteChildren {
 const AuthDashboardRouteChildren: AuthDashboardRouteChildren = {
   AuthDashboardAppointmentsRoute: AuthDashboardAppointmentsRoute,
   AuthDashboardAvailabilityRoute: AuthDashboardAvailabilityRoute,
+  AuthDashboardMetricsRoute: AuthDashboardMetricsRoute,
   AuthDashboardSettingsRoute: AuthDashboardSettingsRoute,
   AuthDashboardIndexRoute: AuthDashboardIndexRoute,
 }
