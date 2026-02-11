@@ -91,7 +91,7 @@ export function AdminSidebar() {
               <Scissors className="size-5 text-primary-foreground" />
             </div>
             <div>
-              <p className="font-semibold text-foreground">Marcus & Co.</p>
+              <p className="font-semibold text-foreground">KD Cuts</p>
               <p className="text-xs text-muted-foreground">Admin Panel</p>
             </div>
           </div>
