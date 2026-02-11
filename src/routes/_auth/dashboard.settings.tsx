@@ -106,6 +106,15 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
           addService(service.service, service.description, service.price)
         ));
 
+        const googoogaga = services.map(service => {
+          return {
+            ...service,
+            id: service.id || Math.floor(Math.random() * 1_0000_000)
+          };
+        });
+
+        setServices(googoogaga);
+
         // Clear deleted services after successful save
         setDeletedServices([]);
 
