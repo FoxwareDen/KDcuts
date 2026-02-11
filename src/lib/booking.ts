@@ -1,4 +1,3 @@
-import { startOfDay } from "date-fns";
 import { client, type MetaData } from "./db.ts";
 import { isoToPgDate } from "./utils";
 
@@ -91,9 +90,16 @@ export async function updateBookingStatus(id: number, status: BookingStatus): Pr
     if (error) throw error;
 
     if (status == "completed" || status == "cancelled") {
-      const { error } = await client.from("booking_data").delete().eq("booking_id", id);
+      const { data: bookingDetails, error: bookingDetailsError } = await client.from("booking_data").select("*").eq("booking_id", id);
 
-      if (error) throw error;
+      if (bookingDetailsError || !bookingDetails) throw new Error('No booking details found');
+
+      const { error: bookingDetailsUpdateError } = await client.from("booking_data").update({
+        email: "",
+        phone: "",
+      }).eq("booking_id", id);
+
+      if (bookingDetailsUpdateError) throw bookingDetailsUpdateError;
     }
 
     return true;

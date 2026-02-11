@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
+  ChartArea,
   // Calendar,
   // Clock,
   LayoutDashboard,
@@ -29,6 +30,11 @@ const navItems = [
   //   href: "/dashboard/appointments",
   //   icon: Calendar,
   // },
+  {
+    label: "Analytics",
+    href: "/dashboard/metrics",
+    icon: ChartArea,
+  },
   {
     label: "Settings",
     href: "/dashboard/settings",

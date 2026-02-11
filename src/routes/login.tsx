@@ -55,7 +55,7 @@ export const Route = createFileRoute('/login')({
         setResetStep(2);
       } catch (err) {
         console.error(err);
-        setError(err.message || 'Failed to send OTP. Please try again.');
+        setError(`${err}` || 'Failed to send OTP. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -93,13 +93,13 @@ export const Route = createFileRoute('/login')({
         }, 2000);
       } catch (err) {
         console.error(err);
-        setError(err.message || 'Failed to reset password. Please check your OTP and try again.');
+        setError(`${err}` || 'Failed to reset password. Please check your OTP and try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsLoading(true);
       setError('');
@@ -132,7 +132,7 @@ export const Route = createFileRoute('/login')({
         }
       } catch (err) {
         console.error(err);
-        setError(err.message);
+        setError(`${err}`);
       } finally {
         setIsLoading(false);
       }

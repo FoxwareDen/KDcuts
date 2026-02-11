@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Check, Plus, Trash2, X } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 
 type DaySchedule = {
@@ -89,7 +89,7 @@ const defaultSchedule: WeeklySchedule = {
 };
 
 export const Route = createFileRoute("/_auth/dashboard/availability")({
-  component: function () {
+  component: function() {
     const [schedule, setSchedule] = useState<WeeklySchedule>(defaultSchedule);
     const [blockedDates, setBlockedDates] = useState<Date[]>([
       new Date(2026, 1, 14), // Feb 14 blocked

@@ -41,9 +41,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className={`mx-auto flex h-16 items-center justify-between px-4 ${
-        isDashboard ? "max-w-full" : "max-w-6xl"
-      }`}>
+      <div className={`mx-auto flex h-16 items-center justify-between px-4 ${isDashboard ? "max-w-full" : "max-w-6xl"
+        }`}>
         <div className="flex items-center gap-2">
           <div className="flex size-10 items-center justify-center rounded-full bg-primary">
             <Scissors className="size-5 text-primary-foreground" />
@@ -65,12 +64,12 @@ export function Header() {
               Dashboard
             </Link>
           )}
-          <Link
-            to="/#services"
+          <a
+            href="/#services"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Services
-          </Link>
+          </a>
           {
             isAuth ? (
               <button
@@ -118,30 +117,30 @@ export function Header() {
           <nav className="flex flex-col px-4 py-4 space-y-4">
             {isAdmin && (
               <>
-             
-              <Link
-                to="/dashboard"
-                onClick={handleLinkClick}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/dashboard/settings"
-                onClick={handleLinkClick}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Settings
+
+                <Link
+                  to="/dashboard"
+                  onClick={handleLinkClick}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Dashboard
                 </Link>
-               </>
+                <Link
+                  to="/dashboard/settings"
+                  onClick={handleLinkClick}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Settings
+                </Link>
+              </>
             )}
-            <Link
-              to="/#services"
+            <a
+              href="/#services"
               onClick={handleLinkClick}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               Services
-            </Link>
+            </a>
             <Link
               to="/login"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"

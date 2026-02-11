@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,24 +21,6 @@ import {
 import { getBulkBookings, updateBookingStatus, type Booking, type BookingClientData, type BookingStatus } from "@/lib/booking";
 
 interface FullBooking extends Booking, BookingClientData { }
-
-// Mock data
-const initialBookings: FullBooking[] = [
-  {
-    id: 1,
-    status: "pending",
-    date: "2026-02-04",
-    start_time: "10:00",
-    end_time: "10:30",
-    email: "john@email",
-    service: "Classic Haircut",
-    booking_id: 2,
-    name: "John Smith",
-    phone: "+1 234 567 8900",
-    duration: 30,
-    updated_at: "2023-01-01T10:00:00.000Z",
-  },
-];
 
 const columns: { id: BookingStatus; title: string; color: string }[] = [
   { id: "pending", title: "Pending", color: "bg-amber-500" },
