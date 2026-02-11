@@ -54,7 +54,7 @@ export function ServicesSection() {
                     <Icon className="size-5 text-primary" />
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {config?.slotduration}
+                    {config?.slotduration} min
                   </span>
                 </div>
 
