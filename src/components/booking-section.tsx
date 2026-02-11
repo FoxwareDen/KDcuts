@@ -205,7 +205,7 @@ export function BookingSection() {
                         <span className="flex items-center justify-between gap-4">
                           <span>{service.service}</span>
                           <span className="text-muted-foreground">
-                            ${service.price}
+                            R{service.price}
                           </span>
                         </span>
                       </SelectItem>
