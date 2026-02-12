@@ -294,7 +294,7 @@ function AddEntryDialog({
           Add Entry
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Add Calendar Entry</DialogTitle>
           <DialogDescription>
@@ -321,29 +321,33 @@ function AddEntryDialog({
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="start-date">Start Date</Label>
-              <C
-                mode="single"
-                selected={startDate}
-                onSelect={setStartDate}
-                className="rounded-lg border border-border"
-                disabled={isSubmitting}
-              />
+          <div className="grid gap-8 sm:grid-cols-2">
+            <div className="space-y-3">
+              <Label htmlFor="start-date" className="text-base font-medium">Start Date</Label>
+              <div className="flex justify-center">
+                <C
+                  mode="single"
+                  selected={startDate}
+                  onSelect={setStartDate}
+                  className="rounded-lg border border-border"
+                  disabled={isSubmitting}
+                />
+              </div>
               {errors.startDate && (
                 <p className="text-sm text-red-500 mt-1">{errors.startDate}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="end-date">End Date</Label>
-              <C
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                className="rounded-lg border border-border"
-                disabled={isSubmitting}
-              />
+            <div className="space-y-3">
+              <Label htmlFor="end-date" className="text-base font-medium">End Date</Label>
+              <div className="flex justify-center">
+                <C
+                  mode="single"
+                  selected={endDate}
+                  onSelect={setEndDate}
+                  className="rounded-lg border border-border"
+                  disabled={isSubmitting}
+                />
+              </div>
               {errors.endDate && (
                 <p className="text-sm text-red-500 mt-1">{errors.endDate}</p>
               )}
@@ -718,4 +722,3 @@ export function CalendarConfig() {
     </div>
   );
 }
-
