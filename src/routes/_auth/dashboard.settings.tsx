@@ -343,7 +343,7 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
                 <Button
                   onClick={addNewService}
                   variant="outline"
-                  className="w-full border-border bg-transparent"
+                  className="w-full border-border bg-transparent cursor-pointer"
                 >
                   Add New Service
                 </Button>
