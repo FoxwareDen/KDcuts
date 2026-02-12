@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Scissors, Phone, Menu, X } from "lucide-react";
+import { Phone, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { getUserSession, signOut } from "@/lib/db";
 import { useLocation } from "@tanstack/react-router";
+import kdCutsLogo from "@/assets/KD Cuts Logo.png";
 
 export function Header() {
   const [isAuth, setIsAuth] = useState(false);
@@ -44,9 +45,11 @@ export function Header() {
       <div className={`mx-auto flex h-16 items-center justify-between px-4 ${isDashboard ? "max-w-full" : "max-w-6xl"
         }`}>
         <div className="flex items-center gap-2">
-          <div className="flex size-10 items-center justify-center rounded-full bg-primary">
-            <Scissors className="size-5 text-primary-foreground" />
-          </div>
+            <img 
+              src={kdCutsLogo} 
+              alt="KD Cuts Logo" 
+              className="size-12 mr-6 object-cover rounded-full"
+            />     
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground">
               KD Cuts

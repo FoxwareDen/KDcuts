@@ -1,6 +1,6 @@
-import { Scissors, MapPin, Phone, Clock, Instagram, Facebook} from "lucide-react";
+import { MapPin, Phone, Clock, Instagram, Facebook} from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
-
+import kdCutsLogo from "@/assets/KD Cuts Logo.png";
 export function Footer() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
@@ -16,9 +16,11 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="mb-4 flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-full bg-primary">
-                <Scissors className="size-5 text-primary-foreground" />
-              </div>
+            <img 
+              src={kdCutsLogo} 
+              alt="KD Cuts Logo" 
+              className="size-30 mr-6 object-cover rounded-full"
+            />  
               <div>
                 <h3 className="text-lg font-bold text-foreground">
                   KD Cuts

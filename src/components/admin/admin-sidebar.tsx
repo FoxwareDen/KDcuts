@@ -7,12 +7,12 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Scissors,
   Settings,
   X,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
+import kdCutsLogo from "@/assets/KD Cuts Logo.png";
 
 const navItems = [
   {
@@ -51,9 +51,11 @@ export function AdminSidebar() {
       {/* Mobile header */}
       <div className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary">
-            <Scissors className="size-5 text-primary-foreground" />
-          </div>
+            <img 
+              src={kdCutsLogo} 
+              alt="KD Cuts Logo" 
+              className="size-12 mr-6 object-cover rounded-full"
+            /> 
           <span className="font-semibold text-foreground">Admin Panel</span>
         </div>
         <Button
@@ -87,9 +89,11 @@ export function AdminSidebar() {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center gap-3 border-b border-border px-6">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary">
-              <Scissors className="size-5 text-primary-foreground" />
-            </div>
+            <img 
+              src={kdCutsLogo} 
+              alt="KD Cuts Logo" 
+              className="size-12 mr-6 object-cover rounded-full"
+            /> 
             <div>
               <p className="font-semibold text-foreground">KD Cuts</p>
               <p className="text-xs text-muted-foreground">Admin Panel</p>
