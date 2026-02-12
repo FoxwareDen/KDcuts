@@ -4,10 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X } from "lucide-react";
+import { Check, X, AlertTriangle } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { addService, deleteService, getServices, type Service } from "@/lib/settings";
 import type { MetaData } from "@/lib/db";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Helper function to generate unique IDs
 const generateUniqueId = () => {
@@ -23,6 +33,8 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
     const [saved, setSaved] = useState(false);
     const [isLoading, setIsLoading] = useState(true); // Added loading state
     const hasLoaded = useRef(false); // Prevent multiple loads
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
 
     useEffect(() => {
       // Only load once
@@ -77,15 +89,31 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
       setServices(newServices);
     };
 
-    const handleDeleteService = (tempId: string) => {
-      const deletedService = services.find(service => service.tempId === tempId);
+    const initiateDelete = (tempId: string) => {
+      setServiceToDelete(tempId);
+      setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+      if (!serviceToDelete) return;
+
+      const deletedService = services.find(service => service.tempId === serviceToDelete);
 
       if (deletedService?.id != undefined) {
         setDeletedServices([...deletedServices, deletedService as Service & { tempId: string } & MetaData]);
       }
 
       // Always remove from current services
-      setServices(services.filter(service => service.tempId !== tempId));
+      setServices(services.filter(service => service.tempId !== serviceToDelete));
+      
+      // Close dialog and reset
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
+    };
+
+    const cancelDelete = () => {
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
     };
 
     const handleSave = async () => {
@@ -138,25 +166,30 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
     }
 
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-6 lg:p-8 pb-24">
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-            <p className="mt-1 text-muted-foreground">
-              Manage your business profile and preferences
-            </p>
+        <div className="mb-8 flex flex-col gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+              <p className="mt-1 text-muted-foreground">
+                Manage your business profile and preferences
+              </p>
+            </div>
           </div>
-          <Button onClick={handleSave} className="gap-2" disabled={saved}>
-            {saved ? (
-              <>
-                <Check className="size-4" />
-                Saved
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
+          
+          {/* Warning Banner */}
+          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+            <AlertTriangle className="size-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-red-800 dark:text-red-200">
+                Unsaved Changes
+              </p>
+              <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                All changes on this page will not be saved until you click the "Save Changes" button at the bottom of the page.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -289,7 +322,7 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
                           <Button
                             variant={isExistingService ? "destructive" : "outline"}
                             size="sm"
-                            onClick={() => handleDeleteService(service.tempId)}
+                            onClick={() => initiateDelete(service.tempId)}
                             className={isExistingService ? "" : "border-border"}
                           >
                             {isExistingService ? (
@@ -318,6 +351,48 @@ export const Route = createFileRoute("/_auth/dashboard/settings")({
             </CardContent>
           </Card>
         </div>
+
+        {/* Fixed Save Button */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 shadow-lg z-40">
+          <div className="max-w-7xl mx-auto flex justify-end">
+            <Button onClick={handleSave} className="gap-2 min-w-[150px] cursor-pointer" disabled={saved}>
+              {saved ? (
+                <>
+                  <Check className="size-4" />
+                  Saved
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this service?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. The service will be permanently removed from your business offerings.
+                {serviceToDelete && services.find(s => s.tempId === serviceToDelete)?.id && (
+                  <span className="block mt-2 font-medium text-foreground">
+                    Note: This will delete the service from the database when you save changes.
+                  </span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelDelete}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Service
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
