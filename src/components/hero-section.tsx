@@ -1,76 +1,21 @@
 import { Star, Clock, Award } from "lucide-react";
-import { useEffect, useState } from "react";
-import img1 from "@/assets/KD Cuts results/IMG_0053.jpeg"
-import img2 from "@/assets/KD Cuts results/IMG_0374.jpeg"
-import img3 from "@/assets/KD Cuts results/IMG_3632.jpeg"
-import img4 from "@/assets/KD Cuts results/IMG_4815.jpeg"
-import img5 from "@/assets/KD Cuts results/IMG_5062.jpeg"
-import img6 from "@/assets/KD Cuts results/IMG_5706.jpeg"
-import img7 from "@/assets/KD Cuts results/IMG_5971.jpeg"
-import img8 from "@/assets/KD Cuts results/IMG_6061.jpeg"
+import logo from "@/assets/KD Cuts Logo.png"; // Update this path to match your logo location
 
 export function HeroSection() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  // Placeholder images - replace these with actual work images later
-  const images = [
-    img1,
-    img2,
-    img3,
-    img4,
-    img5,
-    img6,
-    img7,
-    img8
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 4000); // Change image every 4 seconds
-
-    return () => clearInterval(interval);
-  }, [images.length]);
-
   return (
     <section className="relative overflow-hidden border-b border-border bg-background py-20 md:py-32">
-      {/* Background Carousel */}
+      {/* Logo Background */}
       <div className="absolute inset-0 z-0">
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-background/60 z-10" />
+        {/* Gradient overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/70 to-background/95 z-10" />
         
-        {/* Carousel Images */}
+        {/* Logo with reduced opacity */}
         <div className="relative h-full w-full">
-          {images.map((image, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
-                index === currentIndex ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <img
-                src={image}
-                alt={`Barbershop work ${index + 1}`}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Carousel Indicators */}
-        <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === currentIndex
-                  ? "w-8 bg-primary"
-                  : "w-2 bg-muted-foreground/50 hover:bg-muted-foreground"
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+          <img
+            src={logo}
+            alt="KD Cuts Logo"
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
 
