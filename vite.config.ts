@@ -19,7 +19,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   build: {
-    outDir: "build",
+    outDir: "dist",
   },
   resolve: {
     alias: {
