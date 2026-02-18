@@ -1,5 +1,5 @@
-import { Calendar, Clock, X, Info, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Calendar, Clock, X, Info, AlertCircle, CheckCircle2, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
 import {
   format,
   startOfMonth,
@@ -13,7 +13,6 @@ import {
   isAfter,
 } from "date-fns";
 
-// Types matching your backend structure
 interface AvailableSlot {
   date: string;
   start_time: string;
@@ -32,154 +31,202 @@ export default function TimeSlotSelector({
   slots,
   minAdvanceDays = 2,
   maxAdvanceMonths = 2,
-  onSlotSelect
+  onSlotSelect,
 }: TimeSlotSelectorProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [_selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
+  const [confirmedSlot, setConfirmedSlot] = useState<AvailableSlot | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [progressWidth, setProgressWidth] = useState(100);
 
-  // Calculate booking window
+  // Auto-dismiss confirmation after 5s with a progress bar
+useEffect(() => {
+  if (!showConfirmation) return;
+
+  // setProgressWidth(100);  ← remove this line
+
+  const progressInterval = setInterval(() => {
+    setProgressWidth((prev) => {
+      if (prev <= 0) return 0;
+      return prev - 2;
+    });
+  }, 100);
+
+  const dismissTimer = setTimeout(() => {
+    setShowConfirmation(false);
+  }, 5000);
+
+  return () => {
+    clearInterval(progressInterval);
+    clearTimeout(dismissTimer);
+  };
+}, [showConfirmation]);
+
   const today = new Date();
   const minBookingDate = addDays(today, minAdvanceDays);
   const maxBookingDate = addMonths(today, maxAdvanceMonths);
 
-  // Format date to YYYY-MM-DD
-  const formatDateKey = (date: Date) => {
-    return format(date, 'yyyy-MM-dd');
-  };
+  const formatDateKey = (date: Date) => format(date, "yyyy-MM-dd");
 
-  // Group slots by date
   const slotsByDate = slots.reduce((acc: Record<string, AvailableSlot[]>, slot) => {
-    const dateKey = slot.date;
-    if (!acc[dateKey]) {
-      acc[dateKey] = [];
-    }
-    acc[dateKey].push(slot);
+    if (!acc[slot.date]) acc[slot.date] = [];
+    acc[slot.date].push(slot);
     return acc;
   }, {});
 
-  // Get all days for current month view
   const getMonthDays = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    return eachDayOfInterval({ start: monthStart, end: monthEnd });
+    return eachDayOfInterval({
+      start: startOfMonth(currentMonth),
+      end: endOfMonth(currentMonth),
+    });
   };
 
-  // Check if date has available slots
   const hasSlots = (date: Date) => {
-    const dateKey = formatDateKey(date);
-    return slotsByDate[dateKey] && slotsByDate[dateKey].length > 0;
+    const key = formatDateKey(date);
+    return slotsByDate[key] && slotsByDate[key].length > 0;
   };
 
-  // Check if date is within booking window
-  const isWithinBookingWindow = (date: Date) => {
-    return isAfter(date, minBookingDate) && isBefore(date, maxBookingDate);
-  };
+  const isWithinBookingWindow = (date: Date) =>
+    isAfter(date, minBookingDate) && isBefore(date, maxBookingDate);
 
-  // Check if date is selectable
-  const isDateSelectable = (date: Date) => {
-    return hasSlots(date) && isWithinBookingWindow(date);
-  };
+  const isDateSelectable = (date: Date) =>
+    hasSlots(date) && isWithinBookingWindow(date);
 
-  // Handle date selection
   const handleDateClick = (date: Date) => {
     if (!isDateSelectable(date)) return;
     setSelectedDate(date);
     setShowModal(true);
   };
 
-  // Handle slot selection
-  const handleSlotSelect = (slot: AvailableSlot) => {
-    setSelectedSlot(slot);
-    setShowModal(false);
-    if (onSlotSelect) {
-      onSlotSelect(slot);
-    }
-  };
+const handleSlotSelect = (slot: AvailableSlot) => {
+  setSelectedSlot(slot);
+  setConfirmedSlot(slot);
+  setShowModal(false);
+  setProgressWidth(100);      // ← moved here
+  setShowConfirmation(true);
+  if (onSlotSelect) onSlotSelect(slot);
+};
 
-  // Navigation
-  const previousMonth = () => {
+  const previousMonth = () =>
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
-  };
 
-  const nextMonth = () => {
+  const nextMonth = () =>
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-  };
 
-  // Get slots for selected date
-  const selectedDateSlots = selectedDate ? slotsByDate[formatDateKey(selectedDate)] || [] : [];
+  const selectedDateSlots = selectedDate
+    ? slotsByDate[formatDateKey(selectedDate)] || []
+    : [];
 
-  // Sort slots by time
   const sortedSelectedDateSlots = [...selectedDateSlots].sort((a, b) =>
     a.start_time.localeCompare(b.start_time)
   );
 
-  // Day names
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Format time display
-  // const _formatTimeDisplay = (slot: AvailableSlot) => {
-  //   return `${slot.start_time} - ${slot.end_time}`;
-  // };
-
-  // Get day class based on availability
   const getDayClass = (date: Date) => {
-    // const _dateKey = formatDateKey(date);
     const isSelectable = isDateSelectable(date);
     const isCurrentMonth = isSameMonth(date, currentMonth);
     const isToday = isTodayDate(date);
 
-    if (!isCurrentMonth) {
-      return "text-gray-300 cursor-default";
-    }
-
-    if (!isSelectable) {
-      return "bg-gray-100 text-gray-400 cursor-not-allowed";
-    }
-
-    if (isToday) {
+    if (!isCurrentMonth) return "text-gray-300 cursor-default";
+    if (!isSelectable) return "bg-gray-100 text-gray-400 cursor-not-allowed";
+    if (isToday)
       return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-2 border-blue-500 cursor-pointer";
-    }
-
-    return "bg-green-500 text-white hover:bg-green-600 hover:scale-102 cursor-pointer shadow-sm";
+    return "bg-green-500 text-white hover:bg-green-600 cursor-pointer shadow-sm";
   };
 
-  // Get day title based on status
   const getDayTitle = (date: Date) => {
     if (!isSameMonth(date, currentMonth)) return "Not in current month";
-
     if (!isWithinBookingWindow(date)) {
-      if (isBefore(date, minBookingDate)) {
-        return `Bookings start from ${format(minBookingDate, 'MMM d')}`;
-      } else {
-        return `Bookings only up to ${format(maxBookingDate, 'MMM d')}`;
-      }
+      if (isBefore(date, minBookingDate))
+        return `Bookings start from ${format(minBookingDate, "MMM d")}`;
+      return `Bookings only up to ${format(maxBookingDate, "MMM d")}`;
     }
-
-    if (!hasSlots(date)) {
-      return "No available slots";
-    }
-
+    if (!hasSlots(date)) return "No available slots";
     return "Click to view available times";
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+
+      {/* ── CONFIRMATION TOAST ── */}
+      <div
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${
+          showConfirmation
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-4 pointer-events-none"
+        }`}
+        style={{ width: "min(420px, calc(100vw - 2rem))" }}
+      >
+        <div className="bg-white rounded-xl shadow-2xl border border-green-100 overflow-hidden">
+          {/* Progress bar */}
+          <div className="h-1 bg-gray-100">
+            <div
+              className="h-full bg-green-500 transition-all duration-100 ease-linear"
+              style={{ width: `${progressWidth}%` }}
+            />
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              {/* Icon */}
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 text-sm">
+                  Time slot added!
+                </p>
+                {confirmedSlot && (
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    {confirmedSlot.date} &middot; {confirmedSlot.start_time} – {confirmedSlot.end_time}
+                  </p>
+                )}
+                <button
+                  onClick={() => {
+                    setShowConfirmation(false);
+                    document
+                      .getElementById("booking-details")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 transition-colors"
+                >
+                  Scroll down to continue
+                  <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
+                </button>
+              </div>
+
+              {/* Dismiss */}
+              <button
+                onClick={() => setShowConfirmation(false)}
+                className="flex-shrink-0 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Calendar className="w-7 h-7 text-primary" />
         <div>
           <h2 className="text-xl font-bold text-gray-800">Select Appointment Date</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Bookings available from {format(minBookingDate, 'MMM d')} to {format(maxBookingDate, 'MMM d')}
+            Bookings available from {format(minBookingDate, "MMM d")} to{" "}
+            {format(maxBookingDate, "MMM d")}
           </p>
         </div>
       </div>
 
-{/* Calendar Container */}
-<div className="bg-white p-6 mb-6">
-        {/* Calendar Navigation */}
+      {/* Calendar Container */}
+      <div className="bg-white p-6 mb-6">
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={previousMonth}
@@ -191,7 +238,7 @@ export default function TimeSlotSelector({
             </svg>
           </button>
           <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">
-            {format(currentMonth, 'MMMM yyyy')}
+            {format(currentMonth, "MMMM yyyy")}
           </h3>
           <button
             onClick={nextMonth}
@@ -204,7 +251,6 @@ export default function TimeSlotSelector({
           </button>
         </div>
 
-        {/* Day Names */}
         <div className="grid grid-cols-7 gap-2 mb-4">
           {dayNames.map((day) => (
             <div
@@ -216,7 +262,6 @@ export default function TimeSlotSelector({
           ))}
         </div>
 
-        {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-2">
           {getMonthDays().map((date, index) => {
             const dayNumber = date.getDate();
@@ -235,19 +280,16 @@ export default function TimeSlotSelector({
                   flex flex-col items-center justify-center relative
                   hover:scale-105 active:scale-95
                   ${getDayClass(date)}
-                  ${!isCurrentMonth ? 'opacity-30' : ''}
+                  ${!isCurrentMonth ? "opacity-30" : ""}
                 `}
               >
-                <span className={`text-base ${isToday ? 'font-bold' : ''}`}>
+                <span className={`text-base ${isToday ? "font-bold" : ""}`}>
                   {dayNumber}
                 </span>
                 {hasSlots(date) && isWithinBookingWindow(date) && (
                   <div className="flex gap-0.5 mt-1.5">
                     {[1, 2, 3].map((dot) => (
-                      <div
-                        key={dot}
-                        className="w-1 h-1 bg-current rounded-full opacity-60"
-                      />
+                      <div key={dot} className="w-1 h-1 bg-current rounded-full opacity-60" />
                     ))}
                   </div>
                 )}
@@ -259,7 +301,6 @@ export default function TimeSlotSelector({
           })}
         </div>
 
-        {/* Legend */}
         <div className="mt-8 pt-6 border-t border-gray-100">
           <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm">
             <div className="flex items-center gap-2.5">
@@ -267,7 +308,7 @@ export default function TimeSlotSelector({
               <span className="text-gray-700 font-medium">Available</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full  shadow-sm"></div>
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-sm"></div>
               <span className="text-gray-700 font-medium">Today</span>
             </div>
             <div className="flex items-center gap-2.5">
@@ -286,7 +327,6 @@ export default function TimeSlotSelector({
       {showModal && selectedDate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col">
-            {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -294,7 +334,7 @@ export default function TimeSlotSelector({
                   Select Time
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                  {format(selectedDate, "EEEE, MMMM d, yyyy")}
                 </p>
               </div>
               <button
@@ -306,7 +346,6 @@ export default function TimeSlotSelector({
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6 overflow-y-auto flex-1">
               {sortedSelectedDateSlots.length > 0 ? (
                 <div className="space-y-3">
@@ -341,14 +380,11 @@ export default function TimeSlotSelector({
                 <div className="text-center py-8">
                   <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-600 font-medium">No time slots available</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Please select another date
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">Please select another date</p>
                 </div>
               )}
             </div>
 
-            {/* Modal Footer */}
             <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Info className="w-4 h-4" />
