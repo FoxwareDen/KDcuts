@@ -1,5 +1,6 @@
 import { Star, Clock, Award } from "lucide-react";
-import logo from "@/assets/KD Cuts Logo.png"; // Update this path to match your logo location
+import logo from "@/assets/KD Cuts Logo.png";
+import { Button } from "./ui/button";
 
 export function HeroSection() {
   return (
@@ -31,7 +32,7 @@ export function HeroSection() {
 
           <h2
             className="max-w-3xl text-pretty text-4xl font-bold tracking-tight md:text-6xl pb-5 bg-gradient-to-r from-primary from-70% to-muted-foreground bg-clip-text text-transparent"
-            style={{ WebkitTextStroke: "1px black" }}
+            style={{ WebkitTextStroke: "1px primary" }}
           >
           Premium grooming for the modern gentleman
           </h2>
@@ -40,6 +41,14 @@ export function HeroSection() {
             Experience the art of traditional barbering combined with
             contemporary style. Book your appointment with Kayden today.
           </p>
+          <Button className="relative cursor-pointer mt-4 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground overflow-hidden group transition-transform duration-200 hover:scale-105 active:scale-95 sm:block">
+            {/* Animated border corners */}
+            <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-black transition-all duration-300 group-hover:w-full group-hover:h-full" />
+            <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-black transition-all duration-300 group-hover:w-full group-hover:h-full" />
+            <span className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-black transition-all duration-300 group-hover:w-full group-hover:h-full" />
+            <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-black transition-all duration-300 group-hover:w-full group-hover:h-full" />
+              <a href="/#booking" className="relative z-10">Book Appointment</a>
+          </Button>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-8">
             <div className="flex items-center gap-3">
