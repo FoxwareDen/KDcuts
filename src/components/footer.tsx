@@ -1,4 +1,4 @@
-import { MapPin, Phone, Clock, Instagram, Facebook} from "lucide-react";
+import { MapPin, Phone, Clock, Instagram} from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
 import kdCutsLogo from "@/assets/KD Cuts Logo.png";
 export function Footer() {
@@ -84,13 +84,13 @@ export function Footer() {
               >
                 <Instagram className="size-4" />
               </a>
-              <a
+              {/* <a
                 href="#"
                 className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                 aria-label="Facebook"
               >
                 <Facebook className="size-4" />
-              </a>
+              </a> */}
             </div>
           </div>
         </div>

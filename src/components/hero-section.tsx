@@ -7,7 +7,7 @@ export function HeroSection() {
       {/* Logo Background */}
       <div className="absolute inset-0 z-0">
         {/* Gradient overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/70 to-background/95 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/80 to-background/95 z-10" />
         
         {/* Logo with reduced opacity */}
         <div className="relative h-full w-full">
@@ -29,13 +29,16 @@ export function HeroSection() {
             </span>
           </div>
 
-          <h2 className="max-w-3xl text-pretty text-4xl font-bold tracking-tight text-foreground md:text-6xl">
-            Premium grooming for the modern gentleman
+          <h2
+            className="max-w-3xl text-pretty text-4xl font-bold tracking-tight md:text-6xl pb-5 bg-gradient-to-r from-primary from-70% to-muted-foreground bg-clip-text text-transparent"
+            style={{ WebkitTextStroke: "1px black" }}
+          >
+          Premium grooming for the modern gentleman
           </h2>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
             Experience the art of traditional barbering combined with
-            contemporary style. Book your appointment with Marcus today.
+            contemporary style. Book your appointment with Kayden today.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-8">
