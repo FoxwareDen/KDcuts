@@ -40,6 +40,11 @@ export function Header() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith("/dashboard");
 
+    const navLinkClass =
+    "relative text-sm text-muted-foreground transition-all duration-200 ease-out hover:text-primary hover:scale-110 inline-block after:absolute after:left-0 after:-bottom-0.5 after:h-[2px] after:w-0 after:bg-primary after:transition-all after:duration-200 after:ease-out hover:after:w-full";
+    const mobileLinkClass =
+    "text-sm text-muted-foreground transition-all duration-200 ease-out hover:text-primary hover:translate-x-1.5 hover:scale-[1.02] inline-block";
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className={`mx-auto flex h-16 items-center justify-between px-4 ${isDashboard ? "max-w-full" : "max-w-6xl"
@@ -64,14 +69,14 @@ export function Header() {
           {isAdmin && (
             <Link
               to="/dashboard"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className={navLinkClass}
             >
               Dashboard
             </Link>
           )}
           <a
             href="/#services"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className={navLinkClass}
           >
             Services
           </a>
@@ -79,14 +84,14 @@ export function Header() {
             isAuth ? (
               <button
                 onClick={handleLogOut}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                className={navLinkClass}
               >
                 Logout
               </button>
             ) : (
               <Link
                 to="/login"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                className={navLinkClass}
               >
                 Login
               </Link>
@@ -126,21 +131,21 @@ export function Header() {
                 <Link
                   to="/dashboard"
                   onClick={handleLinkClick}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className={mobileLinkClass}
                 >
                   Dashboard
                 </Link>
                 <Link
                   to="/dashboard/settings"
                   onClick={handleLinkClick}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className={mobileLinkClass}
                 >
                   Settings
                 </Link>
                 <Link
                   to="/dashboard/metrics"
                   onClick={handleLinkClick}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className={mobileLinkClass}
                 >
                   Analytics
                 </Link>
@@ -149,7 +154,7 @@ export function Header() {
             <a
               href="/#services"
               onClick={handleLinkClick}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className={mobileLinkClass}
             >
               Services
             </a>
