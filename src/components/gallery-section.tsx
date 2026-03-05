@@ -50,7 +50,7 @@ const slideVariants = {
     opacity: 1,
     transition: {
       duration: 0.5,
-      ease: "easeInOut"  // Put the easing string inside a transition object
+      ease: "easeInOut" as const,
     },
   },
   exit: (dir: number) => ({
@@ -58,7 +58,7 @@ const slideVariants = {
     opacity: 0,
     transition: {
       duration: 0.5,
-      ease: "easeInOut"  // Put the easing string inside a transition object
+      ease: "easeInOut" as const,
     },
   }),
 };
