@@ -101,13 +101,13 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <a
+          {/* <a
             href="tel:+15551234567"
             className="hidden items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex"
           >
             <Phone className="size-4" />
             (555) 123-4567
-          </a>
+          </a> */}
           <Button className="hidden rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:block">
             <a href="/#booking">Book Appointment</a>
           </Button>
