@@ -59,7 +59,7 @@ export function Footer() {
           {/* Contact */}
           <div>
             <h4 className="mb-4 font-semibold text-foreground">Contact</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
+            {/* <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
                 <span>
@@ -74,16 +74,19 @@ export function Footer() {
                   (555) 123-4567
                 </a>
               </li>
-            </ul>
+            </ul> */}
 
             <div className="mt-4 flex gap-4">
+               <label className="pt-1">TikTok</label>
               <a
                 href="https://www.tiktok.com/@kayden_carelse_?_r=1&_t=ZS-93dRwLs4u2P"
-                className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                className="pt-1 flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                 aria-label="Tiktok"
               >
                 <Instagram className="size-4" />
+                
               </a>
+             
               {/* <a
                 href="#"
                 className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
