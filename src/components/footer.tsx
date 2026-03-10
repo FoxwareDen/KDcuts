@@ -1,4 +1,4 @@
-import { MapPin, Phone, Clock, Instagram} from "lucide-react";
+import { Clock, Instagram} from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
 import kdCutsLogo from "@/assets/KD Cuts Logo.png";
 export function Footer() {
