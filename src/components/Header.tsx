@@ -1,29 +1,40 @@
-import { Link } from "@tanstack/react-router";
-import { Phone, Menu, X } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { getUserSession, signOut } from "@/lib/db";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { useLocation } from "@tanstack/react-router";
 import kdCutsLogo from "@/assets/KD Cuts Logo.png";
+import { auth, db } from "@/lib/firebase";
 
 export function Header() {
-  const [isAuth, setIsAuth] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith("/dashboard");
 
   useEffect(() => {
-    (async () => {
-      const data = await getUserSession();
-
-      if (data) {
-        setIsAuth(true);
-
-        if (data.user.role == "admin") {
-          setIsAdmin(true)
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+        if (userDoc.exists()) {
+          setRole(userDoc.data().role ?? null);
+        } else {
+          setRole(null);
         }
+      } else {
+        setUser(null);
+        setRole(null);
       }
+      setLoading(false);
+    });
 
-    })();
+    return () => unsubscribe();
   }, []);
 
   const handleLinkClick = () => {
@@ -31,83 +42,55 @@ export function Header() {
   };
 
   const handleLogOut = async () => {
-    await signOut();
-    setIsAuth(false);
-    setIsAdmin(false);
-    window.location.href = window.location.origin
+    await signOut(auth);
+    navigate({ to: "/" });
   };
 
-  const location = useLocation();
-  const isDashboard = location.pathname.startsWith("/dashboard");
-
-    const navLinkClass =
+  const navLinkClass =
     "relative text-sm text-muted-foreground transition-all duration-200 ease-out hover:text-primary hover:scale-110 inline-block after:absolute after:left-0 after:-bottom-0.5 after:h-[2px] after:w-0 after:bg-primary after:transition-all after:duration-200 after:ease-out hover:after:w-full";
-    const mobileLinkClass =
+  const mobileLinkClass =
     "text-sm text-muted-foreground transition-all duration-200 ease-out hover:text-primary hover:translate-x-1.5 hover:scale-[1.02] inline-block";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className={`mx-auto flex h-16 items-center justify-between px-4 ${isDashboard ? "max-w-full" : "max-w-6xl"
-        }`}>
+      <div className={`mx-auto flex h-16 items-center justify-between px-4 ${isDashboard ? "max-w-full" : "max-w-6xl"}`}>
         <a href="/">
           <div className="flex items-center gap-2">
-            <img 
-              src={kdCutsLogo} 
-              alt="KD Cuts Logo" 
+            <img
+              src={kdCutsLogo}
+              alt="KD Cuts Logo"
               className="size-12 mr-6 object-cover rounded-full"
-            />     
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-foreground">
-              KD Cuts
-            </h1>
-            <p className="text-xs text-muted-foreground">Est. 2018</p>
+            />
+            <div>
+              <h1 className="text-lg font-bold tracking-tight text-foreground">
+                KD Cuts
+              </h1>
+              <p className="text-xs text-muted-foreground">Est. 2018</p>
+            </div>
           </div>
-        </div>
         </a>
 
         <nav className="hidden items-center gap-6 sm:flex">
-          {isAdmin && (
-            <Link
-              to="/dashboard"
-              className={navLinkClass}
-            >
+          {role === "admin" && (
+            <Link to="/dashboard" className={navLinkClass} onClick={handleLinkClick}>
               Dashboard
             </Link>
           )}
-          <a
-            href="/#services"
-            className={navLinkClass}
-          >
+          <a href="/#services" className={navLinkClass} onClick={handleLinkClick}>
             Services
           </a>
-          {
-            isAuth ? (
-              <button
-                onClick={handleLogOut}
-                className={navLinkClass}
-              >
-                Logout
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                className={navLinkClass}
-              >
-                Login
-              </Link>
-            )
-          }
-
+          {user ? (
+            <button onClick={handleLogOut} className={navLinkClass}>
+              Logout
+            </button>
+          ) : (
+            <Link to="/login" className={navLinkClass} onClick={handleLinkClick}>
+              Login
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-4">
-          {/* <a
-            href="tel:+15551234567"
-            className="hidden items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex"
-          >
-            <Phone className="size-4" />
-            (555) 123-4567
-          </a> */}
           <Button className="hidden rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:block">
             <a href="/#booking">Book Appointment</a>
           </Button>
@@ -125,53 +108,23 @@ export function Header() {
       {isMobileMenuOpen && (
         <div className="sm:hidden border-t border-border bg-background">
           <nav className="flex flex-col px-4 py-4 space-y-4">
-            {isAdmin && (
-              <>
-
-                <Link
-                  to="/dashboard"
-                  onClick={handleLinkClick}
-                  className={mobileLinkClass}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/dashboard/settings"
-                  onClick={handleLinkClick}
-                  className={mobileLinkClass}
-                >
-                  Settings
-                </Link>
-                <Link
-                  to="/dashboard/metrics"
-                  onClick={handleLinkClick}
-                  className={mobileLinkClass}
-                >
-                  Analytics
-                </Link>
-              </>
+            {role === "admin" && (
+              <Link to="/dashboard" onClick={handleLinkClick} className={mobileLinkClass}>
+                Dashboard
+              </Link>
             )}
-            <a
-              href="/#services"
-              onClick={handleLinkClick}
-              className={mobileLinkClass}
-            >
+            <a href="/#services" onClick={handleLinkClick} className={mobileLinkClass}>
               Services
             </a>
-            <Link
-              to="/login"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Login
-            </Link>
-            <a
-              href="tel:+15551234567"
-              onClick={handleLinkClick}
-              className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Phone className="size-4" />
-              (555) 123-4567
-            </a>
+            {user ? (
+              <button onClick={handleLogOut} className={mobileLinkClass}>
+                Logout
+              </button>
+            ) : (
+              <Link to="/login" onClick={handleLinkClick} className={mobileLinkClass}>
+                Login
+              </Link>
+            )}
             <Button className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
               <a href="/#booking" onClick={handleLinkClick}>
                 Book Appointment
@@ -183,4 +136,3 @@ export function Header() {
     </header>
   );
 }
-

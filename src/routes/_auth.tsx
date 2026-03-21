@@ -1,21 +1,21 @@
-import { getUserSession } from "@/lib/db";
+import { getUserSession, checkAuthtozition } from "@/lib/db.fb";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: async () => {
-    const user = await getUserSession();
+    const session = await getUserSession();
 
-    if (!user || !user.user) {
-      redirect({
-        to: "/login",
-      });
+    if (!session || !session.user) {
+      throw redirect({ to: "/login" });
     }
 
-    return user;
-  },
-  component: RouteComponent,
-});
+    const isAdmin = await checkAuthtozition("admin");
 
-function RouteComponent() {
-  return <Outlet />;
-}
+    if (!isAdmin) {
+      throw redirect({ to: "/" });
+    }
+
+    return session;
+  },
+  component: () => <Outlet />,
+});

@@ -1,16 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, AlertCircle, Loader2, KeyRound } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { resetPassword, sendOTP, signInWithAuth, signInWithEmail, signUpWithEmail } from "@/lib/db";
-
+import { signInWithAuth, signInWithEmail, signUpWithEmail, sendOTP } from "@/lib/db.fb";
 
 export const Route = createFileRoute('/login')({
   component: () => {
-    const [mode, setMode] = useState('login'); // 'login', 'signup', 'reset'
-    const [resetStep, setResetStep] = useState(1); // 1: enter email, 2: enter OTP + new password
+    const router = useRouter();
+    const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -18,15 +17,14 @@ export const Route = createFileRoute('/login')({
       name: '',
       email: '',
       password: '',
-      otp: '',
-      newPassword: '',
     });
 
     const handleGoogleSignIn = async () => {
       setIsLoading(true);
       setError('');
       try {
-        await signInWithAuth();
+        const res = await signInWithAuth();
+        if (res) router.navigate({ to: '/' });
       } catch (err) {
         setError('Failed to sign in with Google. Please try again.');
       } finally {
@@ -34,66 +32,21 @@ export const Route = createFileRoute('/login')({
       }
     };
 
-    const handleSendOTP = async () => {
+    const handleResetPassword = async () => {
       setIsLoading(true);
       setError('');
       setSuccessMessage('');
-
       try {
-        if (!formData.email) {
-          throw new Error('Please enter your email address');
-        }
-
+        if (!formData.email) throw new Error('Please enter your email address');
         const res = await sendOTP(formData.email);
-
-        if (!res || !res.success) {
-          throw new Error('Failed to send OTP. Please try again.');
-        }
-
-
-        setSuccessMessage('OTP sent to your email. Please check your inbox.');
-        setResetStep(2);
-      } catch (err) {
-        console.error(err);
-        setError(`${err}` || 'Failed to send OTP. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const handleVerifyOTPAndReset = async () => {
-      setIsLoading(true);
-      setError('');
-      setSuccessMessage('');
-
-      try {
-        if (!formData.otp) {
-          throw new Error('Please enter the OTP');
-        }
-        if (!formData.newPassword) {
-          throw new Error('Please enter your new password');
-        }
-        if (formData.newPassword.length < 6) {
-          throw new Error('Password must be at least 6 characters');
-        }
-
-        const res = await resetPassword(formData.email, formData.otp, formData.newPassword);
-
-        if (!res || !res.success) {
-          throw new Error('Failed to reset password. Please check your OTP and try again.');
-        }
-
-        setSuccessMessage('Password reset successful! You can now sign in with your new password.');
-
-        // Reset to login mode after 2 seconds
+        if (!res) throw new Error('Failed to send reset email');
+        setSuccessMessage('Password reset email sent! Check your inbox.');
         setTimeout(() => {
           setMode('login');
-          setResetStep(1);
           resetForm();
-        }, 2000);
+        }, 4000);
       } catch (err) {
-        console.error(err);
-        setError(`${err}` || 'Failed to reset password. Please check your OTP and try again.');
+        setError(err instanceof Error ? err.message : 'Failed to send reset email');
       } finally {
         setIsLoading(false);
       }
@@ -106,47 +59,30 @@ export const Route = createFileRoute('/login')({
       setSuccessMessage('');
 
       try {
-        if (mode === 'signup' && !formData.name) {
-          throw new Error('Please enter your full name');
+        if (mode === 'reset') {
+          await handleResetPassword();
+          return;
         }
-        if (!formData.email) {
-          throw new Error('Please enter your email address');
-        }
-        if (mode !== 'reset' && !formData.password) {
-          throw new Error('Please enter your password');
-        }
+        if (mode === 'signup' && !formData.name) throw new Error('Please enter your full name');
+        if (!formData.email) throw new Error('Please enter your email address');
+        if (!formData.password) throw new Error('Please enter your password');
 
+        let res;
         if (mode === 'login') {
-          const res = await signInWithEmail(formData.email, formData.password);
-          if (res) window.location.href = "/";
-        } else if (mode === 'signup') {
-          const res = await signUpWithEmail(formData.name, formData.email, formData.password);
-          if (res) window.location.href = "/";
-        } else if (mode === 'reset') {
-          if (resetStep === 1) {
-            await handleSendOTP();
-          } else {
-            await handleVerifyOTPAndReset();
-          }
-          return; // Don't set loading to false here, handled in those functions
+          res = await signInWithEmail(formData.email, formData.password);
+        } else {
+          res = await signUpWithEmail(formData.name, formData.email, formData.password);
         }
+        if (res) router.navigate({ to: '/' });
       } catch (err) {
-        console.error(err);
-        setError(`${err}`);
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setIsLoading(false);
       }
     };
 
     const resetForm = () => {
-      setFormData({ name: '', email: '', password: '', otp: '', newPassword: '' });
-      setError('');
-      setSuccessMessage('');
-    };
-
-    const handleBackToEmail = () => {
-      setResetStep(1);
-      setFormData({ ...formData, otp: '', newPassword: '' });
+      setFormData({ name: '', email: '', password: '' });
       setError('');
       setSuccessMessage('');
     };
@@ -154,32 +90,26 @@ export const Route = createFileRoute('/login')({
     return (
       <div className="min-h-screen bg-secondary flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md">
-          {/* Header */}
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-foreground md:text-4xl">
               {mode === 'login' && 'Welcome Back'}
               {mode === 'signup' && 'Create Account'}
-              {mode === 'reset' && (resetStep === 1 ? 'Reset Password' : 'Enter OTP')}
+              {mode === 'reset' && 'Reset Password'}
             </h2>
             <p className="mt-2 text-muted-foreground">
               {mode === 'login' && 'Sign in to continue to your account'}
               {mode === 'signup' && 'Sign up to get started'}
-              {mode === 'reset' && resetStep === 1 && "Enter your email to receive an OTP"}
-              {mode === 'reset' && resetStep === 2 && "Enter the OTP sent to your email and your new password"}
+              {mode === 'reset' && 'Enter your email to receive a reset link'}
             </p>
           </div>
 
-          {/* Main Card */}
           <div className="rounded-xl border border-border bg-background p-8 shadow-sm">
-            {/* Success Message */}
             {successMessage && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-green-800">{successMessage}</p>
               </div>
             )}
-
-            {/* Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
@@ -187,7 +117,6 @@ export const Route = createFileRoute('/login')({
               </div>
             )}
 
-            {/* Google Sign In - Only show for login and signup */}
             {mode !== 'reset' && (
               <>
                 <Button
@@ -201,44 +130,26 @@ export const Route = createFileRoute('/login')({
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
                   )}
                   Continue with Google
                 </Button>
-
-                {/* Divider */}
                 <div className="relative mb-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-border"></div>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or continue with email
-                    </span>
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
                   </div>
                 </div>
               </>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name Field - Only for signup */}
               {mode === 'signup' && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
@@ -248,9 +159,7 @@ export const Route = createFileRoute('/login')({
                       id="name"
                       placeholder="John Smith"
                       value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="pl-10"
                       disabled={isLoading}
                     />
@@ -258,82 +167,22 @@ export const Route = createFileRoute('/login')({
                 </div>
               )}
 
-              {/* Email Field - Always show for reset step 1, or login/signup */}
-              {(mode !== 'reset' || resetStep === 1) && (
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="john@example.com"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      className="pl-10"
-                      disabled={isLoading || (mode === 'reset' && resetStep === 2)}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="pl-10"
+                    disabled={isLoading}
+                  />
                 </div>
-              )}
+              </div>
 
-              {/* OTP and New Password Fields - Only for reset step 2 */}
-              {mode === 'reset' && resetStep === 2 && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="otp">One-Time Password (OTP)</Label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="otp"
-                        type="text"
-                        placeholder="Enter 6-digit code"
-                        value={formData.otp}
-                        onChange={(e) =>
-                          setFormData({ ...formData, otp: e.target.value })
-                        }
-                        className="pl-10"
-                        disabled={isLoading}
-                        maxLength={6}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        placeholder="••••••••"
-                        value={formData.newPassword}
-                        onChange={(e) =>
-                          setFormData({ ...formData, newPassword: e.target.value })
-                        }
-                        className="pl-10"
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Back to email button */}
-                  <div className="flex justify-start">
-                    <button
-                      type="button"
-                      onClick={handleBackToEmail}
-                      className="text-sm text-primary hover:underline"
-                      disabled={isLoading}
-                    >
-                      ← Use different email
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* Password Field - Not for reset */}
               {mode !== 'reset' && (
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
@@ -344,9 +193,7 @@ export const Route = createFileRoute('/login')({
                       type="password"
                       placeholder="••••••••"
                       value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="pl-10"
                       disabled={isLoading}
                     />
@@ -354,14 +201,12 @@ export const Route = createFileRoute('/login')({
                 </div>
               )}
 
-              {/* Forgot Password Link - Only for login */}
               {mode === 'login' && (
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={() => {
                       setMode('reset');
-                      setResetStep(1);
                       resetForm();
                     }}
                     className="text-sm text-primary hover:underline"
@@ -372,13 +217,7 @@ export const Route = createFileRoute('/login')({
                 </div>
               )}
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -388,28 +227,18 @@ export const Route = createFileRoute('/login')({
                   <>
                     {mode === 'login' && 'Sign In'}
                     {mode === 'signup' && 'Create Account'}
-                    {mode === 'reset' && resetStep === 1 && 'Send OTP'}
-                    {mode === 'reset' && resetStep === 2 && 'Reset Password'}
+                    {mode === 'reset' && 'Send Reset Email'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
             </form>
 
-            {/* Mode Toggle */}
             <div className="mt-6 text-center text-sm">
               {mode === 'login' && (
                 <p className="text-muted-foreground">
                   Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('signup');
-                      resetForm();
-                    }}
-                    className="text-primary font-medium hover:underline"
-                    disabled={isLoading}
-                  >
+                  <button type="button" onClick={() => { setMode('signup'); resetForm(); }} className="text-primary font-medium hover:underline" disabled={isLoading}>
                     Sign up
                   </button>
                 </p>
@@ -417,15 +246,7 @@ export const Route = createFileRoute('/login')({
               {mode === 'signup' && (
                 <p className="text-muted-foreground">
                   Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('login');
-                      resetForm();
-                    }}
-                    className="text-primary font-medium hover:underline"
-                    disabled={isLoading}
-                  >
+                  <button type="button" onClick={() => { setMode('login'); resetForm(); }} className="text-primary font-medium hover:underline" disabled={isLoading}>
                     Sign in
                   </button>
                 </p>
@@ -433,16 +254,7 @@ export const Route = createFileRoute('/login')({
               {mode === 'reset' && (
                 <p className="text-muted-foreground">
                   Remember your password?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('login');
-                      setResetStep(1);
-                      resetForm();
-                    }}
-                    className="text-primary font-medium hover:underline"
-                    disabled={isLoading}
-                  >
+                  <button type="button" onClick={() => { setMode('login'); resetForm(); }} className="text-primary font-medium hover:underline" disabled={isLoading}>
                     Sign in
                   </button>
                 </p>
@@ -450,348 +262,15 @@ export const Route = createFileRoute('/login')({
             </div>
           </div>
 
-          {/* Terms - Only for signup */}
           {mode === 'signup' && (
             <p className="mt-6 text-center text-xs text-muted-foreground">
               By signing up, you agree to our{' '}
-              <a href="#" className="text-primary hover:underline">
-                Terms of Service
-              </a>{' '}
-              and{' '}
-              <a href="#" className="text-primary hover:underline">
-                Privacy Policy
-              </a>
+              <a href="#" className="text-primary hover:underline">Terms of Service</a> and{' '}
+              <a href="#" className="text-primary hover:underline">Privacy Policy</a>
             </p>
           )}
         </div>
       </div>
     );
   }
-})
-
-// import { createFileRoute } from "@tanstack/react-router";
-// import { useState } from 'react';
-// import { Mail, Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
-// import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input';
-// import { Label } from '@/components/ui/label';
-// import { signInWithAuth, signInWithEmail, signUpWithEmail } from "@/lib/db";
-//
-//
-// export const Route = createFileRoute('/login')({
-//   component: () => {
-//     const [mode, setMode] = useState('login'); // 'login', 'signup', 'reset'
-//     const [isLoading, setIsLoading] = useState(false);
-//     const [error, setError] = useState('');
-//     const [formData, setFormData] = useState({
-//       name: '',
-//       email: '',
-//       password: '',
-//     });
-//
-//     const handleGoogleSignIn = async () => {
-//       setIsLoading(true);
-//       setError('');
-//       try {
-//         // Add your Google OAuth logic here
-//         await signInWithAuth();
-//
-//       } catch (err) {
-//         setError('Failed to sign in with Google. Please try again.');
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-//
-//     const handleSubmit = async (e) => {
-//       e.preventDefault();
-//       setIsLoading(true);
-//       setError('');
-//
-//       try {
-//         if (mode === 'signup' && !formData.name) {
-//           throw new Error('Please enter your full name');
-//         }
-//         if (!formData.email) {
-//           throw new Error('Please enter your email address');
-//         }
-//         if (mode !== 'reset' && !formData.password) {
-//           throw new Error('Please enter your password');
-//         }
-//
-//         if (mode === 'login') {
-//           const res = await signInWithEmail(formData.email, formData.password);
-//
-//           if (res) window.location.href = "/";
-//
-//
-//         } else if (mode === 'signup') {
-//           const res = await signUpWithEmail(formData.name, formData.email, formData.password);
-//
-//           if (res) window.location.href = "/";
-//
-//         } else if (mode === 'reset') {
-//           console.log('Password reset requested for:', formData.email);
-//         }
-//       } catch (err) {
-//         console.error(err);
-//         setError(err.message);
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-//
-//     const resetForm = () => {
-//       setFormData({ name: '', email: '', password: '' });
-//       setError('');
-//     };
-//
-//     return (
-//       <div className="min-h-screen bg-secondary flex items-center justify-center px-4 py-16">
-//         <div className="w-full max-w-md">
-//           {/* Header */}
-//           <div className="mb-8 text-center">
-//             <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-//               {mode === 'login' && 'Welcome Back'}
-//               {mode === 'signup' && 'Create Account'}
-//               {mode === 'reset' && 'Reset Password'}
-//             </h2>
-//             <p className="mt-2 text-muted-foreground">
-//               {mode === 'login' && 'Sign in to continue to your account'}
-//               {mode === 'signup' && 'Sign up to get started'}
-//               {mode === 'reset' && "Enter your email to reset your password"}
-//             </p>
-//           </div>
-//
-//           {/* Main Card */}
-//           <div className="rounded-xl border border-border bg-background p-8 shadow-sm">
-//             {/* Error Message */}
-//             {error && (
-//               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-//                 <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-//                 <p className="text-sm text-red-800">{error}</p>
-//               </div>
-//             )}
-//
-//             {/* Google Sign In - Only show for login and signup */}
-//             {mode !== 'reset' && (
-//               <>
-//                 <Button
-//                   type="button"
-//                   variant="outline"
-//                   className="w-full mb-6 h-11"
-//                   onClick={handleGoogleSignIn}
-//                   disabled={isLoading}
-//                 >
-//                   {isLoading ? (
-//                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-//                   ) : (
-//                     <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-//                       <path
-//                         fill="#4285F4"
-//                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-//                       />
-//                       <path
-//                         fill="#34A853"
-//                         d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-//                       />
-//                       <path
-//                         fill="#FBBC05"
-//                         d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-//                       />
-//                       <path
-//                         fill="#EA4335"
-//                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-//                       />
-//                     </svg>
-//                   )}
-//                   Continue with Google
-//                 </Button>
-//
-//                 {/* Divider */}
-//                 <div className="relative mb-6">
-//                   <div className="absolute inset-0 flex items-center">
-//                     <div className="w-full border-t border-border"></div>
-//                   </div>
-//                   <div className="relative flex justify-center text-xs uppercase">
-//                     <span className="bg-background px-2 text-muted-foreground">
-//                       Or continue with email
-//                     </span>
-//                   </div>
-//                 </div>
-//               </>
-//             )}
-//
-//             {/* Form */}
-//             <form onSubmit={handleSubmit} className="space-y-4">
-//               {/* Name Field - Only for signup */}
-//               {mode === 'signup' && (
-//                 <div className="space-y-2">
-//                   <Label htmlFor="name">Full Name</Label>
-//                   <div className="relative">
-//                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-//                     <Input
-//                       id="name"
-//                       placeholder="John Smith"
-//                       value={formData.name}
-//                       onChange={(e) =>
-//                         setFormData({ ...formData, name: e.target.value })
-//                       }
-//                       className="pl-10"
-//                       disabled={isLoading}
-//                     />
-//                   </div>
-//                 </div>
-//               )}
-//
-//               {/* Email Field */}
-//               <div className="space-y-2">
-//                 <Label htmlFor="email">Email Address</Label>
-//                 <div className="relative">
-//                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-//                   <Input
-//                     id="email"
-//                     type="email"
-//                     placeholder="john@example.com"
-//                     value={formData.email}
-//                     onChange={(e) =>
-//                       setFormData({ ...formData, email: e.target.value })
-//                     }
-//                     className="pl-10"
-//                     disabled={isLoading}
-//                   />
-//                 </div>
-//               </div>
-//
-//               {/* Password Field - Not for reset */}
-//               {mode !== 'reset' && (
-//                 <div className="space-y-2">
-//                   <Label htmlFor="password">Password</Label>
-//                   <div className="relative">
-//                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-//                     <Input
-//                       id="password"
-//                       type="password"
-//                       placeholder="••••••••"
-//                       value={formData.password}
-//                       onChange={(e) =>
-//                         setFormData({ ...formData, password: e.target.value })
-//                       }
-//                       className="pl-10"
-//                       disabled={isLoading}
-//                     />
-//                   </div>
-//                 </div>
-//               )}
-//
-//               {/* Forgot Password Link - Only for login */}
-//               {mode === 'login' && (
-//                 <div className="flex justify-end">
-//                   <button
-//                     type="button"
-//                     onClick={() => {
-//                       setMode('reset');
-//                       resetForm();
-//                     }}
-//                     className="text-sm text-primary hover:underline"
-//                     disabled={isLoading}
-//                   >
-//                     Forgot password?
-//                   </button>
-//                 </div>
-//               )}
-//
-//               {/* Submit Button */}
-//               <Button
-//                 type="submit"
-//                 className="w-full"
-//                 size="lg"
-//                 disabled={isLoading}
-//               >
-//                 {isLoading ? (
-//                   <>
-//                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-//                     Processing...
-//                   </>
-//                 ) : (
-//                   <>
-//                     {mode === 'login' && 'Sign In'}
-//                     {mode === 'signup' && 'Create Account'}
-//                     {mode === 'reset' && 'Send Reset Link'}
-//                     <ArrowRight className="ml-2 h-4 w-4" />
-//                   </>
-//                 )}
-//               </Button>
-//             </form>
-//
-//             {/* Mode Toggle */}
-//             <div className="mt-6 text-center text-sm">
-//               {mode === 'login' && (
-//                 <p className="text-muted-foreground">
-//                   Don't have an account?{' '}
-//                   <button
-//                     type="button"
-//                     onClick={() => {
-//                       setMode('signup');
-//                       resetForm();
-//                     }}
-//                     className="text-primary font-medium hover:underline"
-//                     disabled={isLoading}
-//                   >
-//                     Sign up
-//                   </button>
-//                 </p>
-//               )}
-//               {mode === 'signup' && (
-//                 <p className="text-muted-foreground">
-//                   Already have an account?{' '}
-//                   <button
-//                     type="button"
-//                     onClick={() => {
-//                       setMode('login');
-//                       resetForm();
-//                     }}
-//                     className="text-primary font-medium hover:underline"
-//                     disabled={isLoading}
-//                   >
-//                     Sign in
-//                   </button>
-//                 </p>
-//               )}
-//               {mode === 'reset' && (
-//                 <p className="text-muted-foreground">
-//                   Remember your password?{' '}
-//                   <button
-//                     type="button"
-//                     onClick={() => {
-//                       setMode('login');
-//                       resetForm();
-//                     }}
-//                     className="text-primary font-medium hover:underline"
-//                     disabled={isLoading}
-//                   >
-//                     Sign in
-//                   </button>
-//                 </p>
-//               )}
-//             </div>
-//           </div>
-//
-//           {/* Terms - Only for signup */}
-//           {mode === 'signup' && (
-//             <p className="mt-6 text-center text-xs text-muted-foreground">
-//               By signing up, you agree to our{' '}
-//               <a href="#" className="text-primary hover:underline">
-//                 Terms of Service
-//               </a>{' '}
-//               and{' '}
-//               <a href="#" className="text-primary hover:underline">
-//                 Privacy Policy
-//               </a>
-//             </p>
-//           )}
-//         </div>
-//       </div>
-//     );
-//   }
-// })
+});

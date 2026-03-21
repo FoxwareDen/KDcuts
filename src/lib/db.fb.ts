@@ -1,171 +1,160 @@
-import { initializeApp, getApps } from "firebase/app";
 import {
-  getAuth,
-  onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  updateProfile,
   sendPasswordResetEmail,
   confirmPasswordReset,
   signOut as firebaseSignOut,
+  onAuthStateChanged,
+  type User,
+  updateProfile,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
 
-const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+export type UserSession = {
+  user: User | null;
 };
 
-// Prevent re-initialisation in hot-reload environments
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+// ---------------------------------------------------------------------------
+// Session
+// ---------------------------------------------------------------------------
 
-export const auth = getAuth(app);
-export const db   = getFirestore(app);
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface MetaData {
-  // ⚠️  Firestore document IDs are strings, not numbers.
-  //     Update any interface that depends on `id: number` (e.g. Booking, BookingClientData).
-  id: string;
-  created_at: string; // stored as ISO string; use serverTimestamp() on write if preferred
-}
-
-export interface UserSession {
-  user: {
-    id: string;
-    email: string | null;
-    name: string | null;
-    image: string | null;
-    emailVerified: boolean;
-    // Roles are stored as Firebase custom claims — set them server-side via Admin SDK.
-    // Read them client-side with getIdTokenResult().
-    role?: string | null;
-  };
-}
-
-// ─── Auth helpers ─────────────────────────────────────────────────────────────
-
-/** Returns the current session, or null if not signed in. */
 export async function getUserSession(): Promise<UserSession | null> {
-  return new Promise((resolve) => {
-    // onAuthStateChanged fires once immediately with the current state
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      unsubscribe();
-      if (!user) return resolve(null);
-
-      // Custom claims (e.g. { role: "admin" }) must be set via Firebase Admin SDK on your backend.
-      const tokenResult = await user.getIdTokenResult();
-
-      resolve({
-        user: {
-          id:            user.uid,
-          email:         user.email,
-          name:          user.displayName,
-          image:         user.photoURL,
-          emailVerified: user.emailVerified,
-          role:          (tokenResult.claims["role"] as string) ?? null,
-        },
+  try {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        resolve({ user });
       });
     });
-  });
+  } catch (error) {
+    console.error(error as Error);
+    return null;
+  }
 }
 
-/** Returns true if the current user has the given role (via custom claim). */
+// ---------------------------------------------------------------------------
+// Authorization
+// ---------------------------------------------------------------------------
+
 export async function checkAuthtozition(privilege: string): Promise<boolean> {
   try {
-    const session = await getUserSession();
-    return session?.user.role === privilege;
-  } catch {
+    const user = auth.currentUser;
+    if (!user) return false;
+
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) return false;
+
+    const role: string = userDoc.data()?.role ?? "";
+    return role === privilege;
+  } catch (error) {
+    console.error(error as Error);
     return false;
   }
 }
 
-/** Google OAuth pop-up sign-in. */
-export async function signInWithAuth(): Promise<UserSession | null> {
+// ---------------------------------------------------------------------------
+// OAuth — Google
+// ---------------------------------------------------------------------------
+
+export async function signInWithAuth() {
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
-    return getUserSession();
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const { user } = result;
+
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      name: user.displayName,
+      email: user.email,
+      role: "client",
+      createdAt: new Date(),
+    }, { merge: true });
+
+    return { user };
   } catch (error) {
-    console.error(error);
+    console.error(error as Error);
     return null;
   }
 }
 
-/** Email + password sign-in. */
-export async function signInWithEmail(
-  email: string,
-  password: string
-): Promise<UserSession | null> {
+// ---------------------------------------------------------------------------
+// Email / password
+// ---------------------------------------------------------------------------
+
+export async function signInWithEmail(email: string, password: string) {
   try {
-    await signInWithEmailAndPassword(auth, email, password);
-    return getUserSession();
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    return { user };
   } catch (error) {
-    console.error(error);
+    console.error(error as Error);
     return null;
   }
 }
 
-/** Email + password sign-up. */
-export async function signUpWithEmail(
-  name: string,
-  email: string,
-  password: string
-): Promise<UserSession | null> {
+export async function signUpWithEmail(name: string, email: string, password: string) {
   try {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
+
     await updateProfile(user, { displayName: name });
-    return getUserSession();
+
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      name,
+      email,
+      role: "client",
+      createdAt: new Date(),
+    });
+
+    return { user };
   } catch (error) {
-    console.error(error);
+    console.error(error as Error);
     return null;
   }
 }
 
-/**
- * Sends a password-reset email (Firebase handles the OTP internally).
- * ⚠️  The separate `otp` step from NeonDB is gone — Firebase emails a link
- *     that contains an `actionCode`; pass that code to `resetPassword()` below.
- */
-export async function sendOTP(email: string): Promise<boolean | null> {
+// ---------------------------------------------------------------------------
+// Password reset
+// ---------------------------------------------------------------------------
+
+export async function sendOTP(
+  email: string,
+  _type: "forget-password" = "forget-password"
+) {
   try {
     await sendPasswordResetEmail(auth, email);
-    return true;
+    return { email };
   } catch (error) {
-    console.error(error);
+    console.error(error as Error);
     return null;
   }
 }
 
-/**
- * Confirms the password reset.
- * @param actionCode  The code extracted from the Firebase reset-password link
- *                    (e.g. from `new URL(window.location.href).searchParams.get("oobCode")`)
- */
 export async function resetPassword(
-  _email: string,       // no longer needed by Firebase; kept for API compatibility
-  actionCode: string,   // previously `otp` — pass the oobCode from the email link
-  newPassword: string
-): Promise<boolean | null> {
+  _email: string,
+  otp: string,
+  password: string
+) {
   try {
-    await confirmPasswordReset(auth, actionCode, newPassword);
-    return true;
+    await confirmPasswordReset(auth, otp, password);
+    return { success: true };
   } catch (error) {
-    console.error(error);
+    console.error("Password reset failed:", error);
     return null;
   }
 }
 
-export async function signOut(): Promise<void> {
+// ---------------------------------------------------------------------------
+// Sign out
+// ---------------------------------------------------------------------------
+
+export async function signOut() {
   try {
     await firebaseSignOut(auth);
   } catch (error) {
     console.error(error);
+    return null;
   }
 }
