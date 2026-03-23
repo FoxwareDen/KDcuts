@@ -1,5 +1,5 @@
 import useFetch from "@/hooks/useFetch";
-import { getSlotGenerationConfig } from "@/lib/calender";
+import { getSlotGenerationConfig } from "@/lib/calender.fb";
 import { getServices, type Service } from "@/lib/settings";
 import { Scissors, SprayCan, BadgeCheck } from "lucide-react";
 import { useEffect, useState } from "react";

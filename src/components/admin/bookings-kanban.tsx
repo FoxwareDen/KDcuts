@@ -156,13 +156,13 @@ export function BookingsKanban() {
   const [bookings, setBookings] = useState<FullBooking[]>([]);
 
   useEffect(() => {
-    getBulkBookings().then((bookings) => {
-      if (bookings) {
-        setBookings(bookings);
-      }
-    }).catch((error) => {
-      console.error(error);
-    })
+    // getBulkBookings().then((bookings) => {
+    //   if (bookings) {
+    //     setBookings(bookings);
+    //   }
+    // }).catch((error) => {
+    //   console.error(error);
+    // })
   }, [])
 
 

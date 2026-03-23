@@ -9,7 +9,8 @@ import {
   XCircle,
   Users,
 } from "lucide-react";
-import { getBulkBookings, type Booking } from "@/lib/booking";
+import { getBulkBookings } from "@/lib/booking.fb";
+import type { Booking } from "@/lib/booking";
 
 interface BookingMetrics {
   total: number;

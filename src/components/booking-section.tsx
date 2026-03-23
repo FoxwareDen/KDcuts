@@ -10,13 +10,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Clock, ArrowRight, Calendar as Cal, X, Check } from "lucide-react";
-import { generateAvailableSlots, getCalenderEntries, getSlotGenerationConfig, validateBookingTime, type AvailableSlot, type SlotGenerationConfig } from "@/lib/calender";
+import { generateAvailableSlots,  validateBookingTime } from "@/lib/calender";
+import {getCalenderEntries, getSlotGenerationConfig,type AvailableSlot, type SlotGenerationConfig} from "@/lib/calender.fb";
 import { addDays, addMonths, format, parseISO } from "date-fns";
-import { addBooking, getBookings, type Booking } from "@/lib/booking";
+import { addBooking, getBookings } from "@/lib/booking.fb";
 import TimeSlotSelector from "./TimeSlotSelector";
 import useFetch from "@/hooks/useFetch";
 import { getUserSession, } from "@/lib/db";
-import { getServices, type ServiceResponse } from "@/lib/settings";
+import { getServices, type ServiceResponse } from "@/lib/settings.fb";
+import type { Booking } from "@/lib/booking";
 
 const initialServices: ServiceResponse[] = [
   { id: 1, service: "Classic Haircut", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },

@@ -6,7 +6,8 @@ import {
   deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, type MetaData } from "./db.fb";
+import { db } from "./db.fb";
+import type { MetaData } from "./db";
 
 export interface Service {
   service: string;

@@ -1,6 +1,5 @@
 import { client, type MetaData } from "./db";
 
-
 export interface Service {
   service: string,
   description: string,
