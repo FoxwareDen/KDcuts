@@ -1,12 +1,12 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  serverTimestamp
-} from "firebase/firestore";
-import { db } from "./db.fb";
+import { db } from "./firebase";
+import { 
+  collection, doc, 
+  addDoc, setDoc, 
+  getDoc, getDocs, 
+  deleteDoc 
+} from 'firebase/firestore';
+
+import { convertCalendarToEntry, type CalendarEntry } from "./utils";
 
 export interface Calendar {
   start_date: string;
@@ -16,12 +16,7 @@ export interface Calendar {
   days_of_week: number[];
   frequency?: "weekly";
   buffer_minutes?: number;
-  user_id?: string;
-}
-
-export interface CalendarEntry extends Calendar {
-  id: string; // was number — Firestore uses string IDs
-  created_at: string;
+  user_id?: string
 }
 
 export interface AvailableSlot {
@@ -40,79 +35,24 @@ export interface SlotGenerationConfig {
   businessEndHour?: number;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const calendarCol = () => collection(db, "calendar");
-const configCol   = () => collection(db, "config");
-
-function docToCalendarEntry(id: string, d: Record<string, any>): CalendarEntry {
-  return {
-    id,
-    start_date:     d.start_date,
-    end_date:       d.end_date ?? undefined,
-    start_time:     d.start_time,
-    end_time:       d.end_time,
-    days_of_week:   d.days_of_week,
-    frequency:      d.frequency ?? undefined,
-    buffer_minutes: d.buffer_minutes ?? undefined,
-    user_id:        d.user_id ?? undefined,
-    created_at:     d.created_at ?? "",
-  };
-}
-
-// ─── Functions ────────────────────────────────────────────────────────────────
-
-export async function addCalenderEntries(calendars: Calendar[]): Promise<Calendar[] | null> {
+export async function addCalenderEntries(calendars: Calendar[]): Promise<boolean> {
   try {
+    const calendarEntries: CalendarEntry[] = calendars.map(convertCalendarToEntry);
     await Promise.all(
-      calendars.map((calendar) =>
-        addDoc(calendarCol(), {
-          start_date:     calendar.start_date,
-          end_date:       calendar.end_date ?? null,
-          start_time:     calendar.start_time,
-          end_time:       calendar.end_time,
-          days_of_week:   calendar.days_of_week,
-          frequency:      calendar.frequency ?? null,
-          buffer_minutes: calendar.buffer_minutes ?? null,
-          user_id:        calendar.user_id ?? null,
-          created_at:     serverTimestamp(),
-        })
-      )
+      calendarEntries.map((entry) => addDoc(collection(db, "calendar"), entry))
     );
-
-    return calendars;
+    return true;
   } catch (error) {
     console.error(error);
-    return null;
+    return false;
   }
 }
 
 export async function addCalendarEntry(calendar: Calendar): Promise<CalendarEntry | null> {
   try {
-    const ref = await addDoc(calendarCol(), {
-      start_date:     calendar.start_date,
-      end_date:       calendar.end_date ?? null,
-      start_time:     calendar.start_time,
-      end_time:       calendar.end_time,
-      days_of_week:   calendar.days_of_week,
-      frequency:      calendar.frequency ?? null,
-      buffer_minutes: calendar.buffer_minutes ?? null,
-      user_id:        calendar.user_id ?? null,
-      created_at:     serverTimestamp(),
-    });
-
-    return {
-      id:             ref.id,
-      start_date:     calendar.start_date,
-      end_date:       calendar.end_date,
-      start_time:     calendar.start_time,
-      end_time:       calendar.end_time,
-      days_of_week:   calendar.days_of_week,
-      frequency:      calendar.frequency,
-      buffer_minutes: calendar.buffer_minutes,
-      user_id:        calendar.user_id,
-      created_at:     new Date().toISOString(),
-    };
+    const docRef = await addDoc(collection(db, "calendar"), calendar);
+    const snap = await getDoc(docRef);
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as unknown as CalendarEntry) : null;
   } catch (error) {
     console.error(error);
     return null;
@@ -121,17 +61,17 @@ export async function addCalendarEntry(calendar: Calendar): Promise<CalendarEntr
 
 export async function getCalenderEntries(): Promise<CalendarEntry[] | null> {
   try {
-    const snap = await getDocs(calendarCol());
-    return snap.docs.map((d) => docToCalendarEntry(d.id, d.data()));
+    const snap = await getDocs(collection(db, "calendar"));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as CalendarEntry));
   } catch (error) {
     console.error(error);
     return null;
   }
 }
 
-export async function deleteCalenderEntry(id: string): Promise<boolean> {
+export async function deleteCalenderEntry(id: number): Promise<boolean> {
   try {
-    await deleteDoc(doc(db, "calendar", id));
+    await deleteDoc(doc(db, "calendar", id.toString()));
     return true;
   } catch (error) {
     console.error(error);
@@ -141,26 +81,7 @@ export async function deleteCalenderEntry(id: string): Promise<boolean> {
 
 export async function upsertSlotConfig(config: SlotGenerationConfig): Promise<boolean> {
   try {
-    const snap = await getDocs(configCol());
-
-    const payload = {
-      slotduration:      config.slotDuration,
-      bufferminutes:     config.bufferMinutes,
-      minadvancedays:    config.minAdvanceDays,
-      maxadvancemonths:  config.maxAdvanceMonths,
-      businessstarthour: config.businessStartHour ?? null,
-      businessendhour:   config.businessEndHour ?? null,
-    };
-
-    if (snap.empty) {
-      // No config document yet — create one
-      await addDoc(configCol(), { ...payload, created_at: serverTimestamp() });
-    } else {
-      // Update the first (and only) config document
-      const { updateDoc } = await import("firebase/firestore");
-      await updateDoc(snap.docs[0].ref, payload);
-    }
-
+    await setDoc(doc(db, "config", "1"), config);
     return true;
   } catch (error) {
     console.error(error);
@@ -168,29 +89,10 @@ export async function upsertSlotConfig(config: SlotGenerationConfig): Promise<bo
   }
 }
 
-export async function getSlotGenerationConfig(): Promise<{
-  slotduration: number;
-  bufferminutes: number;
-  minadvancedays: number;
-  maxadvancemonths: number;
-  businessstarthour?: number;
-  businessendhour?: number;
-} | null> {
+export async function getSlotGenerationConfig(): Promise<SlotGenerationConfig | null> {
   try {
-    const snap = await getDocs(configCol());
-
-    if (snap.empty) return null;
-
-    const d = snap.docs[0].data();
-
-    return {
-      slotduration:      d.slotduration,
-      bufferminutes:     d.bufferminutes,
-      minadvancedays:    d.minadvancedays,
-      maxadvancemonths:  d.maxadvancemonths,
-      businessstarthour: d.businessstarthour ?? undefined,
-      businessendhour:   d.businessendhour ?? undefined,
-    };
+    const snap = await getDoc(doc(db, "config", "1"));
+    return snap.exists() ? (snap.data() as unknown as SlotGenerationConfig) : null;
   } catch (error) {
     console.error(error);
     return null;

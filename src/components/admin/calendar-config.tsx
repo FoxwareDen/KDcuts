@@ -28,8 +28,9 @@ import {
   Repeat,
   Loader2,
 } from "lucide-react";
-import { addCalendarEntry, deleteCalenderEntry, getCalenderEntries, getSlotGenerationConfig, upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender";
-import { getUserSession, type MetaData } from "@/lib/db";
+import { addCalendarEntry, deleteCalenderEntry, getCalenderEntries, getSlotGenerationConfig, upsertSlotConfig, type Calendar, type SlotGenerationConfig } from "@/lib/calender.fb";
+import { getUserSession} from "@/lib/db.fb";
+import  {type MetaData } from "@/lib/db";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const fullDayNames = [
@@ -169,7 +170,7 @@ function CalendarEntryCard({
 function AddEntryDialog({
   onAdd,
 }: {
-  onAdd: (entry: Omit<Calendar, "user_id">) => void;
+  onAdd: (entry: Omit<Calendar, "user_id">) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
@@ -241,7 +242,7 @@ function AddEntryDialog({
 
     try {
       // Call the onAdd function
-      await Promise.resolve(onAdd({
+      await onAdd({
         start_date: startDate.toISOString().split("T")[0],
         end_date: endDate?.toISOString().split("T")[0],
         start_time: startTime,
@@ -249,7 +250,7 @@ function AddEntryDialog({
         days_of_week: selectedDays,
         frequency: "weekly",
         buffer_minutes: bufferMinutes,
-      }));
+      });
 
       // Show success feedback
       setSubmitSuccess(true);
@@ -474,6 +475,8 @@ export function CalendarConfig() {
       }
     })()
   }, [])
+
+
   // Gets config 
   useEffect(() => {
     (async () => {
@@ -527,16 +530,16 @@ export function CalendarConfig() {
 
   const handleAddEntry = async (entry: Omit<Calendar, "user_id">) => {
     const data = await getUserSession();
-
-    if (!data) return;
+    if (!data || !data.user) return;
 
     const res = await addCalendarEntry({
       ...entry,
-      user_id: data.user.id
-    })
+      user_id: data.user.uuid
+    });
 
-    console.log(res);
-    // setEntries((prev) => [...prev, newEntry]);
+    if (res) {
+      setEntries((prev) => [...prev, res as unknown as CalendarWithId]);
+    }
   };
 
   const handleDeleteEntry = async (id: string) => {

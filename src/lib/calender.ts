@@ -1,184 +1,182 @@
 import { addDays, parseISO, format, parse, addMonths, startOfDay, isAfter, isBefore, differenceInDays } from 'date-fns';
 import type { Booking } from './booking';
-import { client, type MetaData } from './db';
-import { convertCalendarToEntry, type CalendarEntry } from './utils';
+// import { client, type MetaData } from './db';
+// import { convertCalendarToEntry, type CalendarEntry } from './utils';
 
-export interface Calendar {
-  start_date: string;
-  end_date?: string;
-  start_time: string;
-  end_time: string;
-  days_of_week: number[];
-  frequency?: "weekly";
-  buffer_minutes?: number;
-  user_id?: string
-}
+// export interface Calendar {
+//   start_date: string;
+//   end_date?: string;
+//   start_time: string;
+//   end_time: string;
+//   days_of_week: number[];
+//   frequency?: "weekly";
+//   buffer_minutes?: number;
+//   user_id?: string
+// }
 
-/**
- * Inserts multiple calendar entries into the database.
- * 
- * @param  calendars - Array of calendar objects to insert
- * @returns Original calendars array if successful, null on error
- * 
- * @example
- * const calendars = [{
- *   start_date: '2024-01-15',
- *   end_date: '2024-01-15',
- *   start_time: '09:00:00',
- *   end_time: '10:30:00',
- *   days_of_week: [0-6],
- *   frequency: 'weekly',
- *   buffer_minutes: 15,
- *   user_id: 'uuid-here'
- * }];
- * 
- * const result = await addCalendarEntries(calendars);
- */
-export async function addCalenderEntries(calendars: Calendar[]) {
-  try {
-    const calendarEntries: CalendarEntry[] = calendars.map(convertCalendarToEntry);
+// /**
+//  * Inserts multiple calendar entries into the database.
+//  * 
+//  * @param  calendars - Array of calendar objects to insert
+//  * @returns Original calendars array if successful, null on error
+//  * 
+//  * @example
+//  * const calendars = [{
+//  *   start_date: '2024-01-15',
+//  *   end_date: '2024-01-15',
+//  *   start_time: '09:00:00',
+//  *   end_time: '10:30:00',
+//  *   days_of_week: [0-6],
+//  *   frequency: 'weekly',
+//  *   buffer_minutes: 15,
+//  *   user_id: 'uuid-here'
+//  * }];
+//  * 
+//  * const result = await addCalendarEntries(calendars);
+//  */
+// export async function addCalenderEntries(calendars: Calendar[]) {
+//   try {
+//     const calendarEntries: CalendarEntry[] = calendars.map(convertCalendarToEntry);
 
-    const { error } = await client.from("calendar").insert(calendarEntries);
+//     const { error } = await client.from("calendar").insert(calendarEntries);
 
-    if (error) throw error;
+//     if (error) throw error;
 
-    return calendars
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
+//     return calendars
+//   } catch (error) {
+//     console.error(error);
+//     return null;
+//   }
+// }
 
-export async function addCalendarEntry(calendar: Calendar): Promise<CalendarEntry & MetaData | null> {
-  try {
+// export async function addCalendarEntry(calendar: Calendar): Promise<CalendarEntry & MetaData | null> {
+//   try {
 
-    const { data, error } = await client.from("calendar").insert({
-      start_date: calendar.start_date,
-      end_date: calendar.end_date,
-      start_time: calendar.start_time,
-      end_time: calendar.end_time,
-      days_of_week: calendar.days_of_week,
-      frequency: calendar.frequency,
-      buffer_minutes: calendar.buffer_minutes
-    }).select("*").single();
+//     const { data, error } = await client.from("calendar").insert({
+//       start_date: calendar.start_date,
+//       end_date: calendar.end_date,
+//       start_time: calendar.start_time,
+//       end_time: calendar.end_time,
+//       days_of_week: calendar.days_of_week,
+//       frequency: calendar.frequency,
+//       buffer_minutes: calendar.buffer_minutes
+//     }).select("*").single();
 
-    if (error) throw error;
+//     if (error) throw error;
 
-    return data
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
+//     return data
+//   } catch (error) {
+//     console.error(error);
+//     return null;
+//   }
+// }
 
-export async function getCalenderEntries() {
-  try {
-    const { data } = await client.from("calendar").select("*");
+// export async function getCalenderEntries() {
+//   try {
+//     const { data } = await client.from("calendar").select("*");
 
-    return data
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
+//     return data
+//   } catch (error) {
+//     console.error(error);
+//     return null;
+//   }
+// }
 
-export async function deleteCalenderEntry(id: number) {
-  try {
-    const { error } = await client.from("calendar").delete().eq("id", id);
+// export async function deleteCalenderEntry(id: number) {
+//   try {
+//     const { error } = await client.from("calendar").delete().eq("id", id);
 
-    if (error) throw error;
+//     if (error) throw error;
 
-    return true
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-}
+//     return true
+//   } catch (error) {
+//     console.error(error);
+//     return false;
+//   }
+// }
 
-export interface AvailableSlot {
-  date: string;
-  start_time: string;
-  end_time: string;
-  duration: number;
-}
+// export interface AvailableSlot {
+//   date: string;
+//   start_time: string;
+//   end_time: string;
+//   duration: number;
+// }
 
-export interface SlotGenerationConfig {
-  slotDuration: number; // in minutes
-  bufferMinutes: number; // buffer between slots (default: 15)
-  minAdvanceDays: number; // minimum days in advance (default: 2)
-  maxAdvanceMonths: number; // maximum months in advance (default: 2)
-  businessStartHour?: number; // business hours start (0-23)
-  businessEndHour?: number; // business hours end (0-23)
-}
-
-
-export async function upsertSlotConfig(config: SlotGenerationConfig) {
-  try {
-    const { data: exists, error } = await client.from("config").select("*");
-
-    if (error) throw error;
-
-    if (!exists || exists.length === 0) {
-      const { error: insertError } = await client
-        .from('config')
-        .insert({
-          // OMIT id - let the database generate it
-          slotduration: config.slotDuration,
-          bufferminutes: config.bufferMinutes,
-          minadvancedays: config.minAdvanceDays,
-          maxadvancemonths: config.maxAdvanceMonths,
-          businessstarthour: config.businessStartHour,
-          businessendhour: config.businessEndHour,
-        });
-
-      if (insertError) throw insertError;
-    }
-
-    console.log(exists);
+// export interface SlotGenerationConfig {
+//   slotDuration: number; // in minutes
+//   bufferMinutes: number; // buffer between slots (default: 15)
+//   minAdvanceDays: number; // minimum days in advance (default: 2)
+//   maxAdvanceMonths: number; // maximum months in advance (default: 2)
+//   businessStartHour?: number; // business hours start (0-23)
+//   businessEndHour?: number; // business hours end (0-23)
+// }
 
 
-    const { error: updateError } = await client
-      .from("config")
-      .update({
-        slotduration: config.slotDuration,
-        bufferminutes: config.bufferMinutes,
-        minadvancedays: config.minAdvanceDays,
-        maxadvancemonths: config.maxAdvanceMonths,
-        businessstarthour: config.businessStartHour,
-        businessendhour: config.businessEndHour,
-      })
-      .eq("id", exists[0].id)
-      .select();
+// export async function upsertSlotConfig(config: SlotGenerationConfig) {
+//   try {
+//     const { data: exists, error } = await client.from("config").select("*");
 
-    if (updateError) throw updateError;
+//     if (error) throw error;
+
+//     if (!exists || exists.length === 0) {
+//       const { error: insertError } = await client
+//         .from('config')
+//         .insert({
+//           // OMIT id - let the database generate it
+//           slotduration: config.slotDuration,
+//           bufferminutes: config.bufferMinutes,
+//           minadvancedays: config.minAdvanceDays,
+//           maxadvancemonths: config.maxAdvanceMonths,
+//           businessstarthour: config.businessStartHour,
+//           businessendhour: config.businessEndHour,
+//         });
+
+//       if (insertError) throw insertError;
+//     }
 
 
-    return true;
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-}
+//     const { error: updateError } = await client
+//       .from("config")
+//       .update({
+//         slotduration: config.slotDuration,
+//         bufferminutes: config.bufferMinutes,
+//         minadvancedays: config.minAdvanceDays,
+//         maxadvancemonths: config.maxAdvanceMonths,
+//         businessstarthour: config.businessStartHour,
+//         businessendhour: config.businessEndHour,
+//       })
+//       .eq("id", exists[0].id)
+//       .select();
 
-export async function getSlotGenerationConfig(): Promise<
-  {
-    slotduration: number; // in minutes
-    bufferminutes: number; // buffer between slots (default: 15)
-    minadvancedays: number; // minimum days in advance (default: 2)
-    maxadvancemonths: number; // maximum months in advance (default: 2)
-    businessstarthour?: number; // business hours start (0-23)
-    businessendhour?: number; // business hours end (0-23)
-  }
-  | null> {
-  try {
-    const { data } = await client.from("config").select("*").single();
+//     if (updateError) throw updateError;
 
-    return data;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
+
+//     return true;
+//   } catch (error) {
+//     console.error(error);
+//     return false;
+//   }
+// }
+
+// export async function getSlotGenerationConfig(): Promise<
+//   {
+//     slotduration: number; // in minutes
+//     bufferminutes: number; // buffer between slots (default: 15)
+//     minadvancedays: number; // minimum days in advance (default: 2)
+//     maxadvancemonths: number; // maximum months in advance (default: 2)
+//     businessstarthour?: number; // business hours start (0-23)
+//     businessendhour?: number; // business hours end (0-23)
+//   }
+//   | null> {
+//   try {
+//     const { data } = await client.from("config").select("*").single();
+
+//     return data;
+//   } catch (error) {
+//     console.error(error);
+//     return null;
+//   }
+// }
 
 
 // ================================= helpers ================================= 

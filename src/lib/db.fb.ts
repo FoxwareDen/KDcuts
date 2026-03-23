@@ -41,7 +41,13 @@ export async function getUserSession(): Promise<UserSession | null> {
 
 export async function checkAuthtozition(privilege: string): Promise<boolean> {
   try {
-    const user = auth.currentUser;
+    const user = await new Promise<User | null>((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        resolve(user);
+      });
+    });
+
     if (!user) return false;
 
     const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -55,6 +61,7 @@ export async function checkAuthtozition(privilege: string): Promise<boolean> {
   }
 }
 
+
 // ---------------------------------------------------------------------------
 // OAuth — Google
 // ---------------------------------------------------------------------------
@@ -65,12 +72,15 @@ export async function signInWithAuth() {
     const result = await signInWithPopup(auth, provider);
     const { user } = result;
 
-    await setDoc(doc(db, "users", user.uid), {
+    const userRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userRef);
+
+    await setDoc(userRef, {
       uid: user.uid,
       name: user.displayName,
       email: user.email,
-      role: "client",
       createdAt: new Date(),
+      ...(!userDoc.exists() && { role: "client" }),  // only set role if new user
     }, { merge: true });
 
     return { user };
