@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, X, AlertTriangle } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { addService, deleteService, getServices, type Service } from "@/lib/settings";
+import { addService, deleteService, getServices, type Service} from "@/lib/settings.fb";
 import type { MetaData } from "@/lib/db";
 import {
   AlertDialog,

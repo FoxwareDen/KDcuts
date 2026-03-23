@@ -16,9 +16,9 @@ import { addDays, addMonths, format, parseISO } from "date-fns";
 import { addBooking, getBookings } from "@/lib/booking.fb";
 import TimeSlotSelector from "./TimeSlotSelector";
 import useFetch from "@/hooks/useFetch";
-import { getUserSession, } from "@/lib/db";
 import { getServices, type ServiceResponse } from "@/lib/settings.fb";
 import type { Booking } from "@/lib/booking";
+import { getUserSession } from "@/lib/db.fb";
 
 const initialServices: ServiceResponse[] = [
   { id: 1, service: "Classic Haircut", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
@@ -74,6 +74,8 @@ const fetchAndGenerateAvalibleSlots = async () => {
   );
 
   console.log(validation);
+  console.log("Available Slots", availableSlots);
+  
 
   return availableSlots
 };
@@ -110,6 +112,11 @@ export function BookingSection() {
       setServices(initialServices);
     });
   }, [])
+
+
+  useEffect(()=>{
+    fetchAndGenerateAvalibleSlots();
+  },[])
 
   const selectedServiceData = services.find((s) => s.service === selectedService);
 

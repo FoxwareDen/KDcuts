@@ -18,7 +18,8 @@ import {
   X,
 } from "lucide-react";
 
-import { getBulkBookings, updateBookingStatus, type Booking, type BookingClientData, type BookingStatus } from "@/lib/booking";
+import { getBulkBookings, updateBookingStatus,  type BookingClientData, } from "@/lib/booking.fb";
+import type { Booking, BookingStatus } from "@/lib/booking";
 
 interface FullBooking extends Booking, BookingClientData { }
 
@@ -156,13 +157,13 @@ export function BookingsKanban() {
   const [bookings, setBookings] = useState<FullBooking[]>([]);
 
   useEffect(() => {
-    // getBulkBookings().then((bookings) => {
-    //   if (bookings) {
-    //     setBookings(bookings);
-    //   }
-    // }).catch((error) => {
-    //   console.error(error);
-    // })
+    getBulkBookings().then((bookings) => {
+      if (bookings) {
+        setBookings(bookings);
+      }
+    }).catch((error) => {
+      console.error(error);
+    })
   }, [])
 
 
