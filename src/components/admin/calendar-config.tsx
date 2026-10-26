@@ -13,6 +13,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -153,14 +164,35 @@ function CalendarEntryCard({
             </div>
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="size-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(entry.id.toString())}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="size-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+                aria-label="Delete availability entry"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete availability entry?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove this availability schedule.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep entry</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => onDelete(entry.id.toString())}
+                >
+                  Delete entry
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>
@@ -543,9 +575,9 @@ export function CalendarConfig() {
   };
 
   const handleDeleteEntry = async (id: string) => {
-    const res = await deleteCalenderEntry(Number(id));
+    const res = await deleteCalenderEntry(id);
     if (!res) return;
-    setEntries((prev) => prev.filter((e) => e.id !== Number(id)));
+    setEntries((prev) => prev.filter((e) => e.id.toString() !== id));
   };
 
   return (

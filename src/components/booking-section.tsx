@@ -21,9 +21,9 @@ import type { Booking } from "@/lib/booking";
 import { getUserSession } from "@/lib/db.fb";
 
 const initialServices: ServiceResponse[] = [
-  { id: 1, service: "Classic Haircut", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
-  { id: 2, service: "Beard Trim & Shape", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
-  { id: 3, service: "The Full Experience", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
+  { id: "1", service: "Classic Haircut", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
+  { id: "2", service: "Beard Trim & Shape", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
+  { id: "3", service: "The Full Experience", price: 100, created_at: "2026-02-02T10:00:00Z", description: "This is a description" },
 ];
 
 

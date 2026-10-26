@@ -246,21 +246,19 @@ export async function getBookingDetailsByID(
   }
 }
 
-export async function deleteBookingDetailByID(
-  id: string // document ID in bookings_clients
-): Promise<BookingClientData | null> {
+export async function deleteBooking(id: string): Promise<boolean> {
   try {
-    const docRef = doc(db, "bookings_clients", id);
-    const docSnap = await getDoc(docRef);
+    const bookingRef = doc(db, "bookings", id);
+    const clientSnapshot = await getDocs(
+      query(collection(db, "bookings_clients"), where("booking_id", "==", id))
+    );
 
-    if (!docSnap.exists()) return null;
+    await deleteDoc(bookingRef);
+    await Promise.all(clientSnapshot.docs.map((clientDoc) => deleteDoc(clientDoc.ref)));
 
-    const data = docSnap.data() as BookingClientData;
-    await deleteDoc(docRef);
-
-    return data;
+    return true;
   } catch (error) {
     console.error(error);
-    return null;
+    return false;
   }
 }

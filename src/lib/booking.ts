@@ -5,7 +5,7 @@ import { isoToPgDate } from "./utils";
 export type BookingStatus = "pending" | "completed" | "rescheduled" | "cancelled";
 
 export interface Booking {
-  id: number;
+  id: string;
   status: BookingStatus;
   date: string;
   start_time: string;

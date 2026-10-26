@@ -16,12 +16,26 @@ import {
   User,
   Check,
   X,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-import { getBulkBookings, updateBookingStatus,  type BookingClientData, } from "@/lib/booking.fb";
+import { deleteBooking, getBulkBookings, updateBookingStatus, type BookingClientData } from "@/lib/booking.fb";
 import type { Booking, BookingStatus } from "@/lib/booking";
 
-interface FullBooking extends Booking, BookingClientData { }
+interface FullBooking extends Omit<Booking, "id">, BookingClientData {
+  id: string;
+}
 
 const columns: { id: BookingStatus; title: string; color: string }[] = [
   { id: "pending", title: "Pending", color: "bg-amber-500" },
@@ -32,18 +46,24 @@ const columns: { id: BookingStatus; title: string; color: string }[] = [
 function BookingCard({
   booking,
   onStatusChange,
+  onDelete,
 }: {
   booking: FullBooking;
-  onStatusChange: (id: number, status: BookingStatus) => void;
+  onStatusChange: (id: string, status: BookingStatus) => void;
+  onDelete: (id: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+  const formatDate = (dateValue: unknown) => {
+    const date = dateValue && typeof dateValue === "object" && "toDate" in dateValue
+      ? (dateValue as { toDate: () => Date }).toDate()
+      : new Date(String(dateValue));
+    if (Number.isNaN(date.getTime())) return "Date unavailable";
     return date.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",
+      timeZone: "UTC",
     });
   };
 
@@ -140,10 +160,39 @@ function BookingCard({
                 {(booking.status === "completed" ||
                   booking.status === "cancelled") && (
                     <p className="w-full text-center text-xs text-muted-foreground">
-                      No actions available
+                      No status actions available
                     </p>
                   )}
-
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      aria-label={`Delete booking for ${booking.name}`}
+                    >
+                      <Trash2 className="size-3" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this booking?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This permanently removes {booking.name}&apos;s booking and client details.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Keep booking</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => onDelete(booking.id)}
+                      >
+                        Delete booking
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </CollapsibleContent>
@@ -158,17 +207,28 @@ export function BookingsKanban() {
 
   useEffect(() => {
     getBulkBookings().then((bookings) => {
-      if (bookings) {
-        setBookings(bookings);
-      }
+    if (bookings) {
+      setBookings([...bookings].map((booking) => ({ ...booking, id: String(booking.id) })).sort((a, b) => {
+        const first = new Date(String(a.date)).getTime();
+        const second = new Date(String(b.date)).getTime();
+        return (Number.isNaN(first) ? Number.MAX_SAFE_INTEGER : first) -
+          (Number.isNaN(second) ? Number.MAX_SAFE_INTEGER : second);
+      }));
+    }
     }).catch((error) => {
       console.error(error);
     })
   }, [])
 
 
-  const handleStatusChange = async (id: number, newStatus: BookingStatus) => {
-    // TODO: update booking detail
+  const handleDelete = async (id: string) => {
+    const deleted = await deleteBooking(id);
+    if (deleted) {
+      setBookings((prev) => prev.filter((booking) => booking.id !== id));
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: BookingStatus) => {
     const res = await updateBookingStatus(id, newStatus);
 
     if (!res) return;
@@ -216,11 +276,12 @@ export function BookingsKanban() {
                 </div>
               ) : (
                 columnBookings.map((booking) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    onStatusChange={handleStatusChange}
-                  />
+            <BookingCard
+              key={booking.id}
+              booking={booking}
+              onStatusChange={handleStatusChange}
+              onDelete={handleDelete}
+            />
                 ))
               )}
             </div>

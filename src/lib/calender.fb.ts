@@ -103,9 +103,9 @@ export async function addCalendarEntry(calendar: Calendar): Promise<CalendarEntr
   }
 }
 
-export async function deleteCalenderEntry(id: number): Promise<boolean> {
+export async function deleteCalenderEntry(id: string): Promise<boolean> {
   try {
-    await deleteDoc(doc(db, "calendar", id.toString()));
+    await deleteDoc(doc(db, "calendar", id));
     return true;
   } catch (error) {
     console.error(error);
