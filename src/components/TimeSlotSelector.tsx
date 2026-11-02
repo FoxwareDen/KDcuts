@@ -11,6 +11,7 @@ import {
   addDays,
   isBefore,
   isAfter,
+  getDay,
 } from "date-fns";
 
 interface AvailableSlot {
@@ -77,10 +78,18 @@ useEffect(() => {
   }, {});
 
   const getMonthDays = () => {
-    return eachDayOfInterval({
+    const monthDays = eachDayOfInterval({
       start: startOfMonth(currentMonth),
       end: endOfMonth(currentMonth),
     });
+    
+    // Get the day of week the month starts on (0 = Sunday, 6 = Saturday)
+    const firstDay = startOfMonth(currentMonth);
+    const startingDayOfWeek = getDay(firstDay);
+    
+    // Add empty placeholders for days before the month starts
+    const emptyDays = Array(startingDayOfWeek).fill(null);
+    return [...emptyDays, ...monthDays];
   };
 
   const hasSlots = (date: Date) => {
@@ -264,6 +273,11 @@ const handleSlotSelect = (slot: AvailableSlot) => {
 
         <div className="grid grid-cols-7 gap-2">
           {getMonthDays().map((date, index) => {
+            // Empty cells for days before month starts
+            if (!date) {
+              return <div key={`empty-${index}`} />;
+            }
+
             const dayNumber = date.getDate();
             const isCurrentMonth = isSameMonth(date, currentMonth);
             const isToday = isTodayDate(date);
