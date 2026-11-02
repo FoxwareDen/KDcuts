@@ -9,24 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthRouteImport } from './routes/_auth'
-import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
 import { Route as AuthDashboardIndexRouteImport } from './routes/_auth/dashboard.index'
-import { Route as AuthDashboardSettingsRouteImport } from './routes/_auth/dashboard.settings'
-import { Route as AuthDashboardMetricsRouteImport } from './routes/_auth/dashboard.metrics'
-import { Route as AuthDashboardAvailabilityRouteImport } from './routes/_auth/dashboard.availability'
 import { Route as AuthDashboardAppointmentsRouteImport } from './routes/_auth/dashboard.appointments'
+import { Route as AuthDashboardAvailabilityRouteImport } from './routes/_auth/dashboard.availability'
+import { Route as AuthDashboardMetricsRouteImport } from './routes/_auth/dashboard.metrics'
+import { Route as AuthDashboardSettingsRouteImport } from './routes/_auth/dashboard.settings'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/_auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -34,9 +30,13 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthDashboardRoute = AuthDashboardRouteImport.update({
@@ -49,28 +49,28 @@ const AuthDashboardIndexRoute = AuthDashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthDashboardRoute,
 } as any)
-const AuthDashboardSettingsRoute = AuthDashboardSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthDashboardRoute,
-} as any)
-const AuthDashboardMetricsRoute = AuthDashboardMetricsRouteImport.update({
-  id: '/metrics',
-  path: '/metrics',
-  getParentRoute: () => AuthDashboardRoute,
-} as any)
-const AuthDashboardAvailabilityRoute =
-  AuthDashboardAvailabilityRouteImport.update({
-    id: '/availability',
-    path: '/availability',
-    getParentRoute: () => AuthDashboardRoute,
-  } as any)
 const AuthDashboardAppointmentsRoute =
   AuthDashboardAppointmentsRouteImport.update({
     id: '/appointments',
     path: '/appointments',
     getParentRoute: () => AuthDashboardRoute,
   } as any)
+const AuthDashboardAvailabilityRoute =
+  AuthDashboardAvailabilityRouteImport.update({
+    id: '/availability',
+    path: '/availability',
+    getParentRoute: () => AuthDashboardRoute,
+  } as any)
+const AuthDashboardMetricsRoute = AuthDashboardMetricsRouteImport.update({
+  id: '/metrics',
+  path: '/metrics',
+  getParentRoute: () => AuthDashboardRoute,
+} as any)
+const AuthDashboardSettingsRoute = AuthDashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthDashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -151,18 +151,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
+    '/': {
+      id: '/'
+      path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthRouteImport
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -172,11 +165,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
+    '/_auth': {
+      id: '/_auth'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth/dashboard': {
@@ -193,18 +193,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthDashboardIndexRouteImport
       parentRoute: typeof AuthDashboardRoute
     }
-    '/_auth/dashboard/settings': {
-      id: '/_auth/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof AuthDashboardSettingsRouteImport
-      parentRoute: typeof AuthDashboardRoute
-    }
-    '/_auth/dashboard/metrics': {
-      id: '/_auth/dashboard/metrics'
-      path: '/metrics'
-      fullPath: '/dashboard/metrics'
-      preLoaderRoute: typeof AuthDashboardMetricsRouteImport
+    '/_auth/dashboard/appointments': {
+      id: '/_auth/dashboard/appointments'
+      path: '/appointments'
+      fullPath: '/dashboard/appointments'
+      preLoaderRoute: typeof AuthDashboardAppointmentsRouteImport
       parentRoute: typeof AuthDashboardRoute
     }
     '/_auth/dashboard/availability': {
@@ -214,11 +207,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthDashboardAvailabilityRouteImport
       parentRoute: typeof AuthDashboardRoute
     }
-    '/_auth/dashboard/appointments': {
-      id: '/_auth/dashboard/appointments'
-      path: '/appointments'
-      fullPath: '/dashboard/appointments'
-      preLoaderRoute: typeof AuthDashboardAppointmentsRouteImport
+    '/_auth/dashboard/metrics': {
+      id: '/_auth/dashboard/metrics'
+      path: '/metrics'
+      fullPath: '/dashboard/metrics'
+      preLoaderRoute: typeof AuthDashboardMetricsRouteImport
+      parentRoute: typeof AuthDashboardRoute
+    }
+    '/_auth/dashboard/settings': {
+      id: '/_auth/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof AuthDashboardSettingsRouteImport
       parentRoute: typeof AuthDashboardRoute
     }
   }

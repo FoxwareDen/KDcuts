@@ -1,5 +1,25 @@
 # React + TypeScript + Vite what the sigma
 
+## Migrating Neon data to Firebase
+
+The migration script copies rows from the legacy Neon tables `bookings`, `booking_data`, `services`, `calendar`, and `config` into their Firebase collections. It is a dry run unless `--apply` is passed. Re-running it is safe for the same source data: documents use their original IDs and matching destination documents are merged.
+
+Requirements:
+
+- A Neon PostgreSQL connection string (`NEON_DATABASE_URL`), available from the Neon console. The old `VITE_DATABASE_API_URL` is an API URL, not a PostgreSQL connection string.
+- Firebase Admin credentials available through Application Default Credentials, for example a service-account JSON file referenced by `GOOGLE_APPLICATION_CREDENTIALS`.
+- `FIREBASE_PROJECT_ID`, or the existing `VITE_FIREBASE_PROJECT_ID` in `.env`.
+
+In PowerShell, set the connection string and credentials, then run a dry run:
+
+```powershell
+$env:NEON_DATABASE_URL = "postgresql://..."
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\secure\firebase-service-account.json"
+npm run migrate:firebase
+```
+
+Review the row counts, then run `npm run migrate:firebase -- --apply` to write the data. The script also migrates legacy `booking_data` rows into `bookings_clients` and converts their `booking_id` values to strings, as expected by the Firebase app. Neon Auth accounts and passwords are not migrated.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

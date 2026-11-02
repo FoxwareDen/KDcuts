@@ -163,6 +163,7 @@ export async function getBookingsByUserId(
 
 interface FullBooking extends Booking, BookingClientData {}
 
+// TODO: make this less expsinsvie in it call using firebase querys filtering instead of lots of singels calls
 export async function getBulkBookings(): Promise<FullBooking[] | null> {
   try {
     const bookings = await getBookings();
